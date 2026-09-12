@@ -167,6 +167,72 @@ export default function UserPage({ userId }) {
         </div>
       )}
 
+              {/* === TAMPILAN TOKEN & STATUS === */}
+      {myToken ? (
+        <div style={{ 
+          padding: '15px', 
+          background: '#d4edda', 
+          border: '1px solid #c3e6cb', 
+          borderRadius: '8px', 
+          marginBottom: '20px',
+          position: 'relative'
+        }}>
+          <strong>✅ Notifikasi Aktif</strong>
+          <p style={{ margin: '10px 0 5px 0', fontSize: '14px', color: '#155724' }}>
+            Token Perangkat Kamu (FCM Token):
+          </p>
+          
+          {/* Kotak Token yang bisa di-scroll */}
+          <div style={{ 
+            background: '#fff', 
+            padding: '10px', 
+            borderRadius: '4px', 
+            border: '1px solid #28a745',
+            wordBreak: 'break-all',
+            fontSize: '12px',
+            fontFamily: 'monospace',
+            maxHeight: '80px',
+            overflowY: 'auto',
+            color: '#333'
+          }}>
+            {myToken}
+          </div>
+
+          {/* Tombol Copy Token */}
+          <button 
+            onClick={() => {
+              navigator.clipboard.writeText(myToken);
+              alert('✅ Token berhasil disalin!');
+            }}
+            style={{ 
+              marginTop: '10px', 
+              padding: '5px 10px', 
+              background: '#28a745', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: 'pointer',
+              fontSize: '12px'
+            }}
+          >
+            📋 Copy Token
+          </button>
+        </div>
+      ) : (
+        <div style={{ 
+          padding: '15px', 
+          background: '#fff3cd', 
+          border: '1px solid #ffc107', 
+          borderRadius: '8px', 
+          marginBottom: '20px'
+        }}>
+          ⏳ <strong>Menunggu Izin Notifikasi...</strong><br/>
+          <small style={{ color: '#856404' }}>
+            Silakan klik tombol "Allow" pada pop-up browser untuk mendapatkan Token.
+          </small>
+        </div>
+      )}
+
       {/* === DAFTAR USER LAIN (UNTUK CHAT) === */}
       <div style={{ marginBottom: '30px' }}>
         <h3>👥 Daftar User Lain (Klik untuk Chat)</h3>
