@@ -154,13 +154,13 @@ export default function AdminPage() {
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
         <h2>👨‍💼 Dashboard Admin</h2>
-        <button onClick={handleLogout} style={{ padding: '8px 16px', background: '#e60000', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+        <button onClick={handleLogout} className="btn btn-danger" style={{ padding: '8px 16px' }}>
           Keluar
         </button>
       </div>
 
       {/* === BAGIAN 1: INPUT USER BARU === */}
-      <div style={{ marginBottom: '40px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', background: '#f9f9f9' }}>
+      <div className="card" style={{ marginBottom: '40px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', background: '#f9f9f9' }}>
         <h3>➕ Tambah User Baru</h3>
         <div style={{ display: 'flex', gap: '10px' }}>
           <input 
@@ -168,12 +168,12 @@ export default function AdminPage() {
             value={newUserName}
             onChange={(e) => setNewUserName(e.target.value)}
             placeholder="Nama User (misal: Budi)"
+            className="input"
             style={{ flex: 1, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
           />
           <button 
             onClick={handleAddUser}
-            style={{ padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-          >
+            className="btn btn-success">
             Tambah User
           </button>
         </div>
@@ -186,31 +186,32 @@ export default function AdminPage() {
           <p style={{ color: '#888' }}>Belum ada user. Tambah user terlebih dahulu.</p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', border: '1px solid #ddd' }}>
+            <table className="table">
               <thead>
-                <tr style={{ background: '#f1f1f1' }}>
-                  <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>Status</th>
-                  <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>Nama</th>
-                  <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>ID User</th>
-                  <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>Device</th>
-                  <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center' }}>Aksi</th>
+                <tr>
+                  <th style={{ textAlign: 'left' }}>Status</th>
+                  <th style={{ textAlign: 'left' }}>Nama</th>
+                  <th style={{ textAlign: 'left' }}>ID User</th>
+                  <th style={{ textAlign: 'left' }}>Device</th>
+                  <th style={{ textAlign: 'left' }}>Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map(u => (
                   <tr key={u.id}>
-                    <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                    <td >
                       <StatusBadge online={u.isOnline} /> {u.isOnline ? 'Online' : 'Offline'}
                     </td>
-                    <td style={{ padding: '10px', border: '1px solid #ddd' }}>{u.name}</td>
-                    <td style={{ padding: '10px', border: '1px solid #ddd', fontFamily: 'monospace' }}>{u.id}</td>
-                    <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                    <td >{u.name}</td>
+                    <td style={{ fontFamily: 'monospace' }} >{u.id}</td>
+                    <td >
                       {formatDevice(u.device_name, u.browser)}
                     </td>
-                    <td style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
+                    <td style={{ textAlign: 'center' }}>
                       <button 
                         onClick={() => copyToClipboard(u.id)}
-                        style={{ padding: '5px 10px', background: '#0070f3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                        className="btn btn-primary"
+                        style={{ padding: '5px 10px', fontSize: '12px' }}
                       >
                         Copy ID
                       </button>
@@ -224,7 +225,7 @@ export default function AdminPage() {
       </div>
 
       {/* === BAGIAN 3: INPUT NOTIFIKASI === */}
-      <div style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '8px', background: '#f0f8ff' }}>
+      <div className="card">
         <h3>📢 Kirim Notifikasi Baru</h3>
         
         {/* Input Pesan */}
@@ -234,7 +235,8 @@ export default function AdminPage() {
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Tulis pesan notifikasi..."
             rows={4}
-            style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', marginBottom: '10px' }}
+            className="input"
+            style={{ width: '100%', marginBottom: '10px' }}
           />
         </div>
 
@@ -267,8 +269,8 @@ export default function AdminPage() {
           </div>
 
           {targetType === 'specific' && (
-            <div style={{ border: '1px solid #ccc', padding: '10px', borderRadius: '4px', maxHeight: '200px', overflowY: 'auto' }}>
-              <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666' }}>Pilih user yang akan menerima pesan:</p>
+            <div className="input" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+              <p style={{ margin: '0 0 10px 0', fontSize: '14px' }} className="muted">Pilih user yang akan menerima pesan:</p>
               {users.map(u => (
                 <label key={u.id} style={{ display: 'block', marginBottom: '5px', cursor: 'pointer' }}>
                   <input 
@@ -288,17 +290,8 @@ export default function AdminPage() {
         <button 
           onClick={handleSendMessage}
           disabled={!message.trim() || (targetType === 'specific' && selectedUserIds.length === 0)}
-          style={{ 
-            width: '100%', 
-            padding: '12px', 
-            background: message.trim() && (targetType === 'all' || selectedUserIds.length > 0) ? '#28a745' : '#ccc',
-            color: message.trim() && (targetType === 'all' || selectedUserIds.length > 0) ? 'white' : 'gray',
-            border: 'none', 
-            borderRadius: '4px', 
-            cursor: message.trim() && (targetType === 'all' || selectedUserIds.length > 0) ? 'pointer' : 'not-allowed',
-            fontSize: '16px',
-            fontWeight: 'bold'
-          }}
+           className={`btn ${message.trim() && (targetType === 'all' || selectedUserIds.length > 0) ? 'btn-success' : ''}`}
+          style={{ width: '100%', padding: '12px', fontSize: '16px', fontWeight: 'bold' }}
         >
           {targetType === 'all' ? '📢 Kirim ke Semua User' : '📤 Kirim ke User Terpilih'}
         </button>
@@ -306,3 +299,173 @@ export default function AdminPage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//  return (
+//     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
+//       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+//         <h2>👨‍💼 Dashboard Admin</h2>
+//         <button onClick={handleLogout} style={{ padding: '8px 16px', background: '#e60000', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+//           Keluar
+//         </button>
+//       </div>
+
+//       {/* === BAGIAN 1: INPUT USER BARU === */}
+//       <div style={{ marginBottom: '40px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', background: '#f9f9f9' }}>
+//         <h3>➕ Tambah User Baru</h3>
+//         <div style={{ display: 'flex', gap: '10px' }}>
+//           <input 
+//             type="text" 
+//             value={newUserName}
+//             onChange={(e) => setNewUserName(e.target.value)}
+//             placeholder="Nama User (misal: Budi)"
+//             style={{ flex: 1, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
+//           />
+//           <button 
+//             onClick={handleAddUser}
+//             style={{ padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+//           >
+//             Tambah User
+//           </button>
+//         </div>
+//       </div>
+
+//       {/* === BAGIAN 2: TABEL DATA USER === */}
+//       <div style={{ marginBottom: '40px' }}>
+//         <h3>📋 Data User Terdaftar ({users.length})</h3>
+//         {users.length === 0 ? (
+//           <p style={{ color: '#888' }}>Belum ada user. Tambah user terlebih dahulu.</p>
+//         ) : (
+//           <div style={{ overflowX: 'auto' }}>
+//             <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', border: '1px solid #ddd' }}>
+//               <thead>
+//                 <tr style={{ background: '#f1f1f1' }}>
+//                   <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>Status</th>
+//                   <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>Nama</th>
+//                   <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>ID User</th>
+//                   <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>Device</th>
+//                   <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center' }}>Aksi</th>
+//                 </tr>
+//               </thead>
+//               <tbody>
+//                 {users.map(u => (
+//                   <tr key={u.id}>
+//                     <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+//                       <StatusBadge online={u.isOnline} /> {u.isOnline ? 'Online' : 'Offline'}
+//                     </td>
+//                     <td style={{ padding: '10px', border: '1px solid #ddd' }}>{u.name}</td>
+//                     <td style={{ padding: '10px', border: '1px solid #ddd', fontFamily: 'monospace' }}>{u.id}</td>
+//                     <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+//                       {formatDevice(u.device_name, u.browser)}
+//                     </td>
+//                     <td style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
+//                       <button 
+//                         onClick={() => copyToClipboard(u.id)}
+//                         style={{ padding: '5px 10px', background: '#0070f3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+//                       >
+//                         Copy ID
+//                       </button>
+//                     </td>
+//                   </tr>
+//                 ))}
+//               </tbody>
+//             </table>
+//           </div>
+//         )}
+//       </div>
+
+//       {/* === BAGIAN 3: INPUT NOTIFIKASI === */}
+//       <div style={{ padding: '20px', border: '1px solid #ddd', borderRadius: '8px', background: '#f0f8ff' }}>
+//         <h3>📢 Kirim Notifikasi Baru</h3>
+        
+//         {/* Input Pesan */}
+//         <div style={{ marginBottom: '20px' }}>
+//           <textarea
+//             value={message}
+//             onChange={(e) => setMessage(e.target.value)}
+//             placeholder="Tulis pesan notifikasi..."
+//             rows={4}
+//             style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', marginBottom: '10px' }}
+//           />
+//         </div>
+
+//         {/* Pilihan Target */}
+//         <div style={{ marginBottom: '20px' }}>
+//           <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold' }}>Target Pengiriman:</label>
+//           <div style={{ display: 'flex', gap: '20px', marginBottom: '15px' }}>
+//             <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+//               <input 
+//                 type="radio" 
+//                 name="target" 
+//                 value="all" 
+//                 checked={targetType === 'all'} 
+//                 onChange={() => setTargetType('all')}
+//                 style={{ marginRight: '8px' }}
+//               />
+//               Semua User (Broadcast)
+//             </label>
+//             <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+//               <input 
+//                 type="radio" 
+//                 name="target" 
+//                 value="specific" 
+//                 checked={targetType === 'specific'} 
+//                 onChange={() => setTargetType('specific')}
+//                 style={{ marginRight: '8px' }}
+//               />
+//               User Spesifik
+//             </label>
+//           </div>
+
+//           {targetType === 'specific' && (
+//             <div style={{ border: '1px solid #ccc', padding: '10px', borderRadius: '4px', maxHeight: '200px', overflowY: 'auto' }}>
+//               <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666' }}>Pilih user yang akan menerima pesan:</p>
+//               {users.map(u => (
+//                 <label key={u.id} style={{ display: 'block', marginBottom: '5px', cursor: 'pointer' }}>
+//                   <input 
+//                     type="checkbox" 
+//                     checked={selectedUserIds.includes(u.id)} 
+//                     onChange={() => toggleUser(u.id)}
+//                     style={{ marginRight: '8px' }}
+//                   />
+//                   {u.name} ({u.id})
+//                 </label>
+//               ))}
+//               {selectedUserIds.length === 0 && <p style={{ color: '#888', fontSize: '12px' }}>Belum ada user dipilih.</p>}
+//             </div>
+//           )}
+//         </div>
+
+//         <button 
+//           onClick={handleSendMessage}
+//           disabled={!message.trim() || (targetType === 'specific' && selectedUserIds.length === 0)}
+//           style={{ 
+//             width: '100%', 
+//             padding: '12px', 
+//             background: message.trim() && (targetType === 'all' || selectedUserIds.length > 0) ? '#28a745' : '#ccc',
+//             color: message.trim() && (targetType === 'all' || selectedUserIds.length > 0) ? 'white' : 'gray',
+//             border: 'none', 
+//             borderRadius: '4px', 
+//             cursor: message.trim() && (targetType === 'all' || selectedUserIds.length > 0) ? 'pointer' : 'not-allowed',
+//             fontSize: '16px',
+//             fontWeight: 'bold'
+//           }}
+//         >
+//           {targetType === 'all' ? '📢 Kirim ke Semua User' : '📤 Kirim ke User Terpilih'}
+//         </button>
+//       </div>
+//     </div>
+//   );
+// }
