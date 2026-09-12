@@ -120,7 +120,8 @@ const formatDevicesList = (devicesArray) => {
   
       const data = await res.json();
       if (res.ok) {
-        alert(`✅ ${data.message}`);
+         alert(`✅ ${data.message}\nDB: ${data.dbCount} | Push: ${data.pushCount}`);
+      
         setMessage('');
         setSelectedUserIds([]);
       } else {
