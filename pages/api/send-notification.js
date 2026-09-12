@@ -47,15 +47,18 @@ export default async function handler(req, res) {
     }
 
     // 2. Ambil FCM Token dari Database untuk setiap receiver
-     const allTokens = [];
+     // const allTokens = [];
+     let allTokens = [];
     for (const userId of receivers) {
       const userSnap = await get(ref(db, `users/${userId}/fcm_tokens`));
-      const token = userSnap.val();
+      // const token = userSnap.val();
       // if (token) {
       //   userTokens.push({ userId, token });
       // }
-      if (tokens && Array.isArray(tokens) && tokens.length > 0) {
-        allTokens.push(...tokens); // Flatten array
+      
+      const tokensArray = userSnap.val();
+     if (tokensArray && Array.isArray(tokensArray) && tokensArray.length > 0) {
+        allTokens.push(...tokensArray); // Gabungkan semua token
       }
     }
 
@@ -63,7 +66,11 @@ export default async function handler(req, res) {
     //   return res.status(400).json({ message: 'Tidak ada user dengan FCM Token valid' });
     // }
     if (allTokens.length === 0) {
-      return res.status(400).json({ message: 'Tidak ada token FCM valid ditemukan' });
+      return res.status(400).json({ 
+        message: 'Tidak ada token FCM valid ditemukan di database',
+        receivers: receivers.length,
+        tokens: 0
+      });
     }
 
     // 3. Simpan ke Realtime Database (untuk riwayat chat)
@@ -120,7 +127,7 @@ export default async function handler(req, res) {
           },
           fcmOptions: {
             // Link ini akan mengarah ke halaman user (tidak spesifik user, user login sendiri)
-            link: 'https://ns.vercel.app/user' 
+            link: 'https://notifs-peach.vercel.app/user' 
           }
         }
       }).catch(err => {
