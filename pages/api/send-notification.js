@@ -47,17 +47,23 @@ export default async function handler(req, res) {
     }
 
     // 2. Ambil FCM Token dari Database untuk setiap receiver
-    const userTokens = [];
+     const allTokens = [];
     for (const userId of receivers) {
-      const userSnap = await get(ref(db, `users/${userId}/fcm_token`));
+      const userSnap = await get(ref(db, `users/${userId}/fcm_tokens`));
       const token = userSnap.val();
-      if (token) {
-        userTokens.push({ userId, token });
+      // if (token) {
+      //   userTokens.push({ userId, token });
+      // }
+      if (tokens && Array.isArray(tokens) && tokens.length > 0) {
+        allTokens.push(...tokens); // Flatten array
       }
     }
 
-    if (userTokens.length === 0) {
-      return res.status(400).json({ message: 'Tidak ada user dengan FCM Token valid' });
+    // if (userTokens.length === 0) {
+    //   return res.status(400).json({ message: 'Tidak ada user dengan FCM Token valid' });
+    // }
+    if (allTokens.length === 0) {
+      return res.status(400).json({ message: 'Tidak ada token FCM valid ditemukan' });
     }
 
     // 3. Simpan ke Realtime Database (untuk riwayat chat)
@@ -77,28 +83,49 @@ export default async function handler(req, res) {
 
     // 4. ✅ KIRIM PUSH NOTIFICATION VIA FCM HTTP v1
     const messaging = admin.messaging();
-    const pushPromises = userTokens.map(async ({ userId, token }) => {
-      try {
-        await messaging.send({
-          token: token,
+    // const pushPromises = userTokens.map(async ({ userId, token }) => {
+    //   try {
+    //     await messaging.send({
+    //       token: token,
+    //       notification: {
+    //         title: title,
+    //         body: body
+    //       },
+    //       webpush: {
+    //         notification: {
+    //           requireInteraction: true, // Agar notif tidak hilang otomatis di Android
+    //           icon: '/favicon.ico'
+    //         },
+    //         fcmOptions: {
+    //           link: `https://ns.vercel.app/user/${userId}` // Link saat notif diklik
+    //         }
+    //       }
+    //     });
+    //     console.log(`✅ Push sent to ${userId}`);
+    //   } catch (pushError) {
+    //     console.error(`❌ Push failed for ${userId}:`, pushError.message);
+    //   }
+    // });
+    const pushPromises = allTokens.map(token => {
+      return messaging.send({
+        token: token,
+        notification: {
+          title: title,
+          body: body
+        },
+        webpush: {
           notification: {
-            title: title,
-            body: body
+            requireInteraction: true,
+            icon: '/favicon.ico'
           },
-          webpush: {
-            notification: {
-              requireInteraction: true, // Agar notif tidak hilang otomatis di Android
-              icon: '/favicon.ico'
-            },
-            fcmOptions: {
-              link: `https://ns.vercel.app/user/${userId}` // Link saat notif diklik
-            }
+          fcmOptions: {
+            // Link ini akan mengarah ke halaman user (tidak spesifik user, user login sendiri)
+            link: 'https://ns.vercel.app/user' 
           }
-        });
-        console.log(`✅ Push sent to ${userId}`);
-      } catch (pushError) {
-        console.error(`❌ Push failed for ${userId}:`, pushError.message);
-      }
+        }
+      }).catch(err => {
+        console.error(`❌ Push failed for token:`, err.message);
+      });
     });
 
     await Promise.all(pushPromises);
