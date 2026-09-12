@@ -31,6 +31,17 @@ export default function AdminPage() {
     return () => unsubscribe();
   }, []);
 
+  //helper format nama device
+  const formatDevice = (deviceName, browser) => {
+    if (!deviceName) return <span style={{color: '#999'}}>-</span>;
+    return (
+      <div>
+        <strong>{deviceName}</strong>
+        <div style={{ fontSize: '11px', color: '#666' }}>🌐 {browser || 'Unknown Browser'}</div>
+      </div>
+    );
+  };
+
   const handleLogout = () => router.push('/');
 
   // 2. Tambah User Baru
@@ -181,6 +192,7 @@ export default function AdminPage() {
                   <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>Status</th>
                   <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>Nama</th>
                   <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>ID User</th>
+                  <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>Device</th>
                   <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center' }}>Aksi</th>
                 </tr>
               </thead>
@@ -192,6 +204,9 @@ export default function AdminPage() {
                     </td>
                     <td style={{ padding: '10px', border: '1px solid #ddd' }}>{u.name}</td>
                     <td style={{ padding: '10px', border: '1px solid #ddd', fontFamily: 'monospace' }}>{u.id}</td>
+                    <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                      {formatDevice(u.device_name, u.browser)}
+                    </td>
                     <td style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                       <button 
                         onClick={() => copyToClipboard(u.id)}
