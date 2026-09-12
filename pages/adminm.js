@@ -52,8 +52,39 @@ export default function AdminPage() {
     alert(`✅ User "${newUserName}" berhasil ditambahkan!\nID User: ${userId}\n\nBerikan link ini ke user: http://localhost:3000/user/${userId}`);
   };
 
-  // 3. Kirim Notifikasi
+  // Di pages/admin.js
   const handleSendMessage = async () => {
+    if (!message.trim()) return alert('Pesan tidak boleh kosong!');
+  
+    const payload = {
+      title: 'Notifikasi Admin',
+      body: message,
+      targetType: targetType === 'all' ? 'all' : 'specific',
+      targetIds: targetType === 'specific' ? selectedUserIds : []
+    };
+  
+    try {
+      const res = await fetch('/api/send-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+  
+      const data = await res.json();
+      if (res.ok) {
+        alert(`✅ ${data.message}`);
+        setMessage('');
+        setSelectedUserIds([]);
+      } else {
+        alert(`❌ Gagal: ${data.message}`);
+      }
+    } catch (error) {
+      alert('Error koneksi server');
+    }
+  };
+  
+  // 3. Kirim Notifikasi
+  const handleSendMessageU = async () => {
     if (!message.trim()) return alert('Pesan tidak boleh kosong!');
     
     const newMessage = {
