@@ -93,7 +93,10 @@ export default async function handler(req, res) {
       const tokens = snap.val();
       if (tokens && Array.isArray(tokens)) {
         // allTokens.push(...tokens);
-        allTokens.push({ token, userId });
+        // allTokens.push({ token, userId });
+         tokens.forEach(token => {
+          allTokens.push({ token, userId }); // ✅ Sekarang token terdefinisi
+        });
       }
     }
 
