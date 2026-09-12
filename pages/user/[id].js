@@ -15,6 +15,7 @@ export default function UserPage({ userId }) {
   const [message, setMessage] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -372,11 +373,14 @@ export default function UserPage({ userId }) {
       </div>
 
       {/* === AREA CHAT DENGAN USER TERPILIH === */}
-      {selectedUser && (
+      {isChatOpen && selectedUser && (
         <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', background: '#f9f9f9' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
             <h3>💬 Chat dengan {selectedUser.name}</h3>
-            <button onClick={() => setSelectedUser(null)} style={{ padding: '5px 10px', background: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+            <button onClick={() =>{
+                setIsChatOpen(false);
+                setSelectedUser(null);
+              }} style={{ padding: '5px 10px', background: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
               Tutup
             </button>
           </div>
