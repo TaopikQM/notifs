@@ -1,13 +1,28 @@
 
-
-
-
 // pages/_app.js
-import '../styles/globals.css'; // Sesuaikan jika ada global css
+import '../styles/globals.css';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function App({ Component, pageProps }) {
-  return <Component {...pageProps} />;
+  return (
+    <>
+      {/* Ikon toggle muncul di semua halaman */}
+      <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 9999 }}>
+        <ThemeToggle />
+      </div>
+
+      <Component {...pageProps} />
+    </>
+  );
 }
+
+
+// // pages/_app.js
+// import '../styles/globals.css'; // Sesuaikan jika ada global css
+
+// export default function App({ Component, pageProps }) {
+//   return <Component {...pageProps} />;
+// }
 // // pages/_app.js
 // import { useEffect } from 'react';
 
