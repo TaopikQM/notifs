@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { db, requestPermissionAndGetToken, listenForMessages } from '../../lib/firebase';
 import { ref, set, onValue, push, get, update } from 'firebase/database';
+import { getDeviceType, getBrowser } from '../../lib/device-utils'; // Import 
 
 export default function UserPage({ userId }) {
   const router = useRouter();
@@ -39,9 +40,27 @@ export default function UserPage({ userId }) {
     requestPermissionAndGetToken().then(token => {
       if (token) {
         setMyToken(token);
-        set(ref(userRef, 'fcm_token'), token);
-        set(ref(userRef, 'isOnline'), true);
-        set(ref(userRef, 'lastSeen'), Date.now());
+        // set(ref(userRef, 'fcm_token'), token);
+        // set(ref(userRef, 'isOnline'), true);
+        // set(ref(userRef, 'lastSeen'), Date.now());
+
+        // Ambil User Agent (Browser mengirim ini secara otomatis)
+        const userAgent = navigator.userAgent;
+        const deviceInfo = getDeviceType(userAgent);
+        const browserName = getBrowser(userAgent);
+
+        // Update data user di Firebase dengan info device terbaru
+        // Kita gunakan update() agar tidak menimpa data lain
+        update(userRef, {
+          fcm_token: token,
+          isOnline: true,
+          lastSeen: Date.now(),
+          device_name: `${deviceInfo.device} (${deviceInfo.platform})`,
+          browser: browserName,
+          user_agent_raw: userAgent // Opsional: simpan raw string untuk debug
+        }).then(() => {
+          console.log('✅ Device info updated:', deviceInfo.device);
+        });
       }
     });
 
