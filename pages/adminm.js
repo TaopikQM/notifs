@@ -79,6 +79,79 @@ const formatDevicesList = (devicesArray) => {
   return <div style={{ lineHeight: '1.4' }}>{deviceItems}</div>;
 };
 
+// Di pages/admin.js, tambahkan fungsi ini
+
+const formatFcmTokensList = (tokensArray) => {
+  // Jika data belum ada, tampilkan tanda strip
+  if (!tokensArray || !Array.isArray(tokensArray) || tokensArray.length === 0) {
+    return <span style={{ color: '#999', fontStyle: 'italic' }}>Belum ada token</span>;
+  }
+
+  return (
+    <div style={{ lineHeight: '1.6' }}>
+      {tokensArray.map((token, index) => (
+        <div 
+          key={index} 
+          style={{ 
+            marginBottom: '8px',
+            paddingBottom: '8px',
+            borderBottom: index < tokensArray.length - 1 ? '1px dashed #eee' : 'none',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: '5px'
+          }}
+        >
+          <div style={{ flex: 1 }}>
+            <div style={{ 
+              fontSize: '11px', 
+              fontFamily: 'monospace',
+              background: '#f0f0f0',
+              padding: '5px',
+              borderRadius: '3px',
+              wordBreak: 'break-all',
+              color: '#333'
+            }}>
+              {token.substring(0, 30)}...
+            </div>
+            <small style={{ color: '#888', display: 'block', marginTop: '2px' }}>
+              #{index + 1}
+            </small>
+          </div>
+          <button
+            onClick={() => copyToClipboard(token)}
+            style={{
+              padding: '3px 8px',
+              fontSize: '10px',
+              background: '#0070f3',
+              color: 'white',
+              border: 'none',
+              borderRadius: '3px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              marginTop: '2px'
+            }}
+            title="Copy full token"
+          >
+            Copy
+          </button>
+        </div>
+      ))}
+      <div style={{ 
+        marginTop: '8px', 
+        padding: '5px 8px', 
+        background: '#e3f2fd', 
+        borderRadius: '3px',
+        fontSize: '12px',
+        fontWeight: 'bold',
+        color: '#0070f3'
+      }}>
+        Total: {tokensArray.length} token
+      </div>
+    </div>
+  );
+};
+
   const handleLogout = () => router.push('/');
 
   // 2. Tambah User Baru
