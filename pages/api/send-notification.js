@@ -123,7 +123,7 @@ export default async function handler(req, res) {
         messaging.send({
           token,
           notification: { title, body, 
-                        icon: '/dolan,png'
+                        icon: '/dolan.png'
                         },
           data: {
             userId: userId, // ID user yang menerima
