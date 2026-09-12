@@ -335,7 +335,7 @@ const formatFcmTokensList = (tokensArray) => {
               verticalAlign: 'top',
               maxWidth: '250px'
             }}>
-              {formatFcmTokensList(u.fcm_token)}
+              {formatFcmTokensList(u.fcm_tokens)}
             </td>
                     <td style={{ textAlign: 'center' }}>
                       <button 
