@@ -8,7 +8,7 @@ import { getDeviceType, getBrowser } from '../../lib/device-utils'; // Import
 export default function UserPage({ userId }) {
   const router = useRouter();
   const [userProfile, setUserProfile] = useState(null);
-  const [myToken, setMyToken] = useState(null);
+  const [myToken, setMyToken] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [allUsers, setAllUsers] = useState([]); // User lain (kecuali diri sendiri)
   const [selectedUser, setSelectedUser] = useState(null);
@@ -39,63 +39,107 @@ export default function UserPage({ userId }) {
     // 2. Request Token & Update Status Online
     requestPermissionAndGetToken().then(token => {
       if (token) {
-        setMyToken(token);
-        // set(ref(userRef, 'fcm_token'), token);
-        // set(ref(userRef, 'isOnline'), true);
-        // set(ref(userRef, 'lastSeen'), Date.now());
+        // setMyToken(token);
+        // // set(ref(userRef, 'fcm_token'), token);
+        // // set(ref(userRef, 'isOnline'), true);
+        // // set(ref(userRef, 'lastSeen'), Date.now());
 
-        // Ambil User Agent (Browser mengirim ini secara otomatis)
-        const userAgent = navigator.userAgent;
-        const deviceInfo = getDeviceType(userAgent);
-        const browserName = getBrowser(userAgent);
+        // // Ambil User Agent (Browser mengirim ini secara otomatis)
+        // const userAgent = navigator.userAgent;
+        // const deviceInfo = getDeviceType(userAgent);
+        // const browserName = getBrowser(userAgent);
 
-        // // Update data user di Firebase dengan info device terbaru
-        // // Kita gunakan update() agar tidak menimpa data lain
-        // update(userRef, {
-        //   fcm_token: token,
-        //   isOnline: true,
-        //   lastSeen: Date.now(),
-        //   device_name: `${deviceInfo.device} (${deviceInfo.platform})`,
+        // // // Update data user di Firebase dengan info device terbaru
+        // // // Kita gunakan update() agar tidak menimpa data lain
+        // // update(userRef, {
+        // //   fcm_token: token,
+        // //   isOnline: true,
+        // //   lastSeen: Date.now(),
+        // //   device_name: `${deviceInfo.device} (${deviceInfo.platform})`,
+        // //   browser: browserName,
+        // //   user_agent_raw: userAgent // Opsional: simpan raw string untuk debug
+        // // }).then(() => {
+        // //   console.log('✅ Device info updated:', deviceInfo.device);
+        // const newDevice = {
+        //   name: `${deviceInfo.device} (${deviceInfo.platform})`,
         //   browser: browserName,
-        //   user_agent_raw: userAgent // Opsional: simpan raw string untuk debug
-        // }).then(() => {
-        //   console.log('✅ Device info updated:', deviceInfo.device);
-        const newDevice = {
-          name: `${deviceInfo.device} (${deviceInfo.platform})`,
-          browser: browserName,
-          lastSeen: Date.now(),
-          timestamp: Date.now()
-        };
+        //   lastSeen: Date.now(),
+        //   timestamp: Date.now()
+        // };
 
-        // Ambil data user terbaru lagi (untuk memastikan kita ambil array yang benar)
+        // // Ambil data user terbaru lagi (untuk memastikan kita ambil array yang benar)
+        // get(userRef).then((currentSnapshot) => {
+        //   const currentData = currentSnapshot.val();
+          
+        //   // Jika 'devices' belum ada, buat array baru
+        //   let devicesList = [];
+        //   if (currentData && currentData.devices) {
+        //     devicesList = Array.isArray(currentData.devices) ? [...currentData.devices] : [];
+        //   }
+
+        //   // Cek apakah device ini sudah pernah dicatat (opsional, untuk hindari duplikat jika login berkali-kali di device sama dalam waktu singkat)
+        //   const isDuplicate = devicesList.some(d => d.name === newDevice.name && (Date.now() - d.timestamp < 60000)); // Jika sama dalam 1 menit, abaikan
+
+        //   if (!isDuplicate) {
+        //     // Tambahkan device baru ke array
+        //     devicesList.push(newDevice);
+            
+        //     // Update Firebase dengan array yang sudah diperbarui
+        //     update(userRef, {
+        //       fcm_token: token,
+        //       isOnline: true,
+        //       lastSeen: Date.now(),
+        //       devices: devicesList // Simpan array lengkap
+        //     }).then(() => {
+        //       console.log('✅ Device ditambahkan ke daftar:', newDevice.name);
+        //     });
+        //   } else {
+        //     console.log('ℹ️ Device sudah ada (mungkin update status online), tidak menambah duplikat.');
+        //   }
+        // });
+        // Ambil data terbaru untuk memastikan token array valid
         get(userRef).then((currentSnapshot) => {
           const currentData = currentSnapshot.val();
           
-          // Jika 'devices' belum ada, buat array baru
-          let devicesList = [];
-          if (currentData && currentData.devices) {
-            devicesList = Array.isArray(currentData.devices) ? [...currentData.devices] : [];
+          // Ambil array token yang sudah ada, atau buat baru
+          let tokensList = [];
+          if (currentData && currentData.fcm_tokens && Array.isArray(currentData.fcm_tokens)) {
+            tokensList = [...currentData.fcm_tokens];
           }
 
-          // Cek apakah device ini sudah pernah dicatat (opsional, untuk hindari duplikat jika login berkali-kali di device sama dalam waktu singkat)
-          const isDuplicate = devicesList.some(d => d.name === newDevice.name && (Date.now() - d.timestamp < 60000)); // Jika sama dalam 1 menit, abaikan
+          // Cek apakah token ini sudah ada (hindari duplikat exact match)
+          const isDuplicate = tokensList.includes(token);
 
           if (!isDuplicate) {
-            // Tambahkan device baru ke array
-            devicesList.push(newDevice);
-            
-            // Update Firebase dengan array yang sudah diperbarui
-            update(userRef, {
-              fcm_token: token,
-              isOnline: true,
-              lastSeen: Date.now(),
-              devices: devicesList // Simpan array lengkap
-            }).then(() => {
-              console.log('✅ Device ditambahkan ke daftar:', newDevice.name);
-            });
-          } else {
-            console.log('ℹ️ Device sudah ada (mungkin update status online), tidak menambah duplikat.');
+            // Tambahkan token baru ke array
+            tokensList.push(token);
           }
+
+          // Update dengan array token + info device
+          const userAgent = navigator.userAgent;
+          const deviceInfo = getDeviceType(userAgent);
+          const browserName = getBrowser(userAgent);
+          
+          // Buat object device dengan token yang baru (atau token lama jika sudah ada)
+          const newDevice = {
+            name: `${deviceInfo.device} (${deviceInfo.platform})`,
+            browser: browserName,
+            lastSeen: Date.now(),
+            timestamp: Date.now(),
+            // Simpan token ini di device object juga untuk tracking
+            fcm_token: token 
+          };
+
+          // Update database
+          update(userRef, {
+            fcm_tokens: tokensList, // Array token
+            isOnline: true,
+            lastSeen: Date.now(),
+            devices: [newDevice] // Tambah device baru ke list (logika sama seperti sebelumnya)
+          }).then(() => {
+            console.log('✅ Token & Device updated:', tokensList.length, 'token(s)');
+            setMyTokens(tokensList); // Update state lokal
+          });
         });
       }
     });
