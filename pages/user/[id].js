@@ -114,6 +114,7 @@ export default function UserPage({ userId }) {
             // Tambahkan token baru ke array
             tokensList.push(token);
           }
+          setMyToken(token);
 
           // Update dengan array token + info device
           const userAgent = navigator.userAgent;
