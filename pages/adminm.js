@@ -32,7 +32,7 @@ export default function AdminPage() {
   }, []);
 
   //helper format nama device
-  const formatDevice = (deviceName, browser) => {
+  const formatDeviceU = (deviceName, browser) => {
     if (!deviceName) return <span style={{color: '#999'}}>-</span>;
     return (
       <div>
@@ -41,6 +41,43 @@ export default function AdminPage() {
       </div>
     );
   };
+
+// Helper untuk format daftar device
+const formatDevicesList = (devicesArray) => {
+  // Jika data belum ada, tampilkan tanda strip
+  if (!devicesArray || !Array.isArray(devicesArray) || devicesArray.length === 0) {
+    return <span style={{ color: '#999', fontStyle: 'italic' }}>Belum ada device</span>;
+  }
+
+  // Urutkan device dari yang terbaru (lastSeen)
+  const sortedDevices = [...devicesArray].sort((a, b) => b.lastSeen - a.lastSeen);
+
+  // Buat daftar item HTML
+  const deviceItems = sortedDevices.map((device, index) => (
+    <div key={index} style={{ 
+      marginBottom: '4px', 
+      paddingBottom: '4px', 
+      borderBottom: index < sortedDevices.length - 1 ? '1px dashed #eee' : 'none'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <span style={{ 
+          display: 'inline-block', 
+          width: '8px', 
+          height: '8px', 
+          borderRadius: '50%', 
+          background: device.lastSeen > (Date.now() - 300000) ? '#28a745' : '#dc3545', // Hijau jika < 5 menit lalu, Merah jika lama
+          marginRight: '6px'
+        }} title={device.lastSeen > (Date.now() - 300000) ? 'Online Baru Saja' : 'Offline'}></span>
+        <strong style={{ fontSize: '13px' }}>{device.name}</strong>
+      </div>
+      <div style={{ fontSize: '11px', color: '#666', marginLeft: '14px' }}>
+        🌐 {device.browser} • {new Date(device.lastSeen).toLocaleTimeString()}
+      </div>
+    </div>
+  ));
+
+  return <div style={{ lineHeight: '1.4' }}>{deviceItems}</div>;
+};
 
   const handleLogout = () => router.push('/');
 
@@ -204,8 +241,12 @@ export default function AdminPage() {
                     </td>
                     <td >{u.name}</td>
                     <td style={{ fontFamily: 'monospace' }} >{u.id}</td>
-                    <td >
-                      {formatDevice(u.device_name, u.browser)}
+                    <td style={{ 
+                      padding: '10px', 
+                      border: '1px solid #ddd',
+                      verticalAlign: 'top' // Agar text sejajar atas jika banyak device
+                    }}>
+                      {formatDevicesList(u.devices)}
                     </td>
                     <td style={{ textAlign: 'center' }}>
                       <button 
@@ -312,7 +353,9 @@ export default function AdminPage() {
 
 
 
-
+// <td >
+//                       {formatDevice(u.device_name, u.browser)}
+//                     </td>
 //  return (
 //     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
 //       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
