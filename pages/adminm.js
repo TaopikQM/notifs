@@ -262,7 +262,7 @@ const formatDevicesList = (devicesArray) => {
               verticalAlign: 'top',
               maxWidth: '250px'
             }}>
-              {formatFcmTokensList(u.fcm_tokens)}
+              {formatFcmTokensList(u.fcm_token)}
             </td>
                     <td style={{ textAlign: 'center' }}>
                       <button 
