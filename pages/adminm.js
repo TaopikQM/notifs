@@ -237,6 +237,7 @@ const formatDevicesList = (devicesArray) => {
                   <th style={{ textAlign: 'left' }}>Nama</th>
                   <th style={{ textAlign: 'left' }}>ID User</th>
                   <th style={{ textAlign: 'left' }}>Device</th>
+                  <th style={{ textAlign: 'left' }}>fcm tokens</th>
                   <th style={{ textAlign: 'left' }}>Aksi</th>
                 </tr>
               </thead>
@@ -255,6 +256,14 @@ const formatDevicesList = (devicesArray) => {
                     }}>
                       {formatDevicesList(u.devices)}
                     </td>
+                           <td style={{ 
+              padding: '10px', 
+              border: '1px solid #ddd',
+              verticalAlign: 'top',
+              maxWidth: '250px'
+            }}>
+              {formatFcmTokensList(u.fcm_tokens)}
+            </td>
                     <td style={{ textAlign: 'center' }}>
                       <button 
                         onClick={() => copyToClipboard(u.id)}
