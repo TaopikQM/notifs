@@ -120,8 +120,14 @@ const formatDevicesList = (devicesArray) => {
   
       const data = await res.json();
       if (res.ok) {
-         alert(`✅ ${data.message}\nDB: ${data.dbCount} | Push: ${data.pushCount}`);
-      
+         // alert(`✅ ${data.message}\nDB: ${data.dbCount} | Push: ${data.pushCount}`);
+       alert(
+        `✅ ${data.message}\n\n` +
+        `👥 Penerima: ${data.receivers} user\n` +
+        `📱 Token: ${data.tokensTotal} device\n` +
+        `✅ Berhasil: ${data.pushSuccess} push\n` +
+        `❌ Gagal: ${data.pushFailed} push`
+      );
         setMessage('');
         setSelectedUserIds([]);
       } else {
