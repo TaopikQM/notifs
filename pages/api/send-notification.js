@@ -122,16 +122,20 @@ export default async function handler(req, res) {
       allTokens.map(({ token, userId })=>
         messaging.send({
           token,
-          notification: { title, body, 
-                        icon: '/dolan.png'
+          notification: { 
+                          title, 
+                          body, 
+                          icon: '/dolan.png'
                         },
           data: {
             userId: userId, // ID user yang menerima
             click_action: `https://notifs-peach.vercel.app/user/${userId}` // URL tujuan saat diklik
           },
           webpush: {
-            notification: { requireInteraction: true, icon: '/dolan.png' , badge: '/dolan.png' },
-            fcmOptions: { link: 'https://notifs-peach.vercel.app/user/${userId}' }
+            notification: { requireInteraction: true, 
+                             icon: '/dolan.png' , 
+                           badge: '/dolan.png' },
+            fcmOptions: { link: `https://notifs-peach.vercel.app/user/${userId}` }
           }
         })
       )
