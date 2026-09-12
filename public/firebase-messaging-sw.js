@@ -19,11 +19,77 @@ const messaging = firebase.messaging();
 
 
 
+
+// ✅ Handle background message
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message', payload);
-  const { title, body } = payload.notification;
-  self.registration.showNotification(title || 'Notifikasi', { body });
+  
+  const { title, body, icon } = payload.notification;
+  const { userId, click_action } = payload.data || {};
+
+  // ✅ Tampilkan notifikasi dengan logo & bisa diklik
+  self.registration.showNotification(title || 'Notifikasi', {
+    body: body || 'Pesan baru',
+    icon: icon || '/dolan.png', // ✅ Logo dari payload atau default dolan.png
+    badge: '/dolan.png',
+    tag: 'notif-' + (userId || 'default'), // Agar notif dengan user sama tidak duplicate
+    requireInteraction: true,
+    data: {
+      userId: userId,
+      url: click_action || 'https://notifs-peach.vercel.app/user' // URL tujuan saat diklik
+    }
+  });
 });
+
+// ✅ Handle notifikasi saat diklik
+self.addEventListener('notificationclick', (event) => {
+  console.log('[firebase-messaging-sw.js] Notification clicked:', event.notification.data);
+  
+  event.notification.close();
+
+  const urlToOpen = event.notification.data?.url || 'https://notifs-peach.vercel.app/user';
+
+  // Cari window yang sudah terbuka, jika ada fokuskan, kalau tidak buka baru
+  event.waitUntil(
+    clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true
+    }).then((clientList) => {
+      // Cek apakah ada window dengan domain yang sama
+      for (let i = 0; i < clientList.length; i++) {
+        const client = clientList[i];
+        if (client.url === urlToOpen && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // Jika tidak ada, buka window baru dengan URL tujuan
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});
+
+// ✅ Handle notifikasi ditutup (opsional, untuk analytics)
+self.addEventListener('notificationclose', (event) => {
+  console.log('[firebase-messaging-sw.js] Notification closed');
+});
+
+// ✅ Ensure Service Worker stays active
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', () => self.clients.claim());
+
+
+// messaging.onBackgroundMessage((payload) => {
+//   console.log('[firebase-messaging-sw.js] Received background message', payload);
+//   const { title, body, icon } = payload.notification;
+//   self.registration.showNotification(title || 'Notifikasi', { body });
+// });
+
+
+
+
+
 // // Handle pesan saat tab tertutup
 // messaging.onBackgroundMessage((payload) => {
 //   console.log('[firebase-messaging-sw.js] Received background message ', payload);
