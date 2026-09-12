@@ -3,7 +3,7 @@ import admin from 'firebase-admin';
 import { db } from '../../lib/firebase';
 import { ref, push, set, get } from 'firebase/database';
 
-// Inisialisasi Firebase Admin (HANYA SEKALI)
+// Inisialisasi Firebase Admin (HANYA SEKALI)   
 if (!admin.apps.length) {
   try {
     admin.initializeApp({
