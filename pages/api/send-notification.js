@@ -92,7 +92,8 @@ export default async function handler(req, res) {
       const snap = await get(ref(db, `users/${userId}/fcm_tokens`));
       const tokens = snap.val();
       if (tokens && Array.isArray(tokens)) {
-        allTokens.push(...tokens);
+        // allTokens.push(...tokens);
+        allTokens.push({ token, userId });
       }
     }
 
@@ -114,13 +115,20 @@ export default async function handler(req, res) {
 
     // ✅ Kirim push menggunakan messaging instance yang benar
     const results = await Promise.allSettled(
-      allTokens.map(token =>
+      // allTokens.map(token =>
+      allTokens.map(({ token, userId })=>
         messaging.send({
           token,
-          notification: { title, body },
+          notification: { title, body, 
+                        icon: '/dolan,png'
+                        },
+          data: {
+            userId: userId, // ID user yang menerima
+            click_action: `https://notifs-peach.vercel.app/user/${userId}` // URL tujuan saat diklik
+          },
           webpush: {
-            notification: { requireInteraction: true, icon: '/favicon.ico' },
-            fcmOptions: { link: 'https://notifs-peach.vercel.app/user' }
+            notification: { requireInteraction: true, icon: '/dolan.png' , badge: '/dolan.png' },
+            fcmOptions: { link: 'https://notifs-peach.vercel.app/user/${userId}' }
           }
         })
       )
