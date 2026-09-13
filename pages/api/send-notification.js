@@ -118,13 +118,18 @@ export default async function handler(req, res) {
 
     // ✅ Kirim push menggunakan messaging instance yang benar
     const results = await Promise.allSettled(
-      allTokens.map(token =>
+      // allTokens.map(token =>
+      allTokens.map(({ token, userId }) =>
         messaging.send({
           token,
           notification: { title, body },
+          data: {
+            userId: userId, // ✅ Simpan userId di data
+            click_action: `https://notifs-peach.vercel.app/user/${userId}`
+          },
           webpush: {
             notification: { requireInteraction: true, icon: '/dolan.png' },
-            fcmOptions: { link: 'https://ns.vercel.app/user' }
+            fcmOptions: { link: `https://notifs-peach.vercel.app/user/${userId}` }
           }
         })
       )
