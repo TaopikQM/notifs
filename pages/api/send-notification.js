@@ -117,9 +117,9 @@ export default async function handler(req, res) {
       allTokens.map(token =>
         messaging.send({
           token,
-          notification: { title, body },
+          notification: { title, body, icon: '/dolan.png' },
           webpush: {
-            notification: { requireInteraction: true, icon: '/favicon.ico' },
+            notification: { requireInteraction: true, icon: '/dolan.png' },
             fcmOptions: { link: 'https://ns.vercel.app/user' }
           }
         })
