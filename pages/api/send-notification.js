@@ -96,7 +96,8 @@ export default async function handler(req, res) {
       const snap = await get(ref(db, `users/${userId}/fcm_tokens`));
       const tokens = snap.val();
       if (tokens && Array.isArray(tokens)) {
-        allTokens.push(...tokens);
+        // allTokens.push(...tokens);
+        allTokens.push({ token, userId });
       }
     }
 
