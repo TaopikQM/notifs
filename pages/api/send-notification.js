@@ -3,14 +3,17 @@ import admin from 'firebase-admin';
 import { db } from '../../lib/firebase';
 import { ref, push, set, get } from 'firebase/database';
 
+// ✅ Gunakan nama khusus "admin-app" agar tidak bentrok dengan firebase client
 const ADMIN_APP_NAME = 'admin-app';
 
 function getAdminMessaging() {
+  // Jika app admin sudah ada, kembalikan messaging-nya
   if (admin.apps.some(app => app.name === ADMIN_APP_NAME)) {
     return admin.messaging(ADMIN_APP_NAME);
   }
 
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
+
   if (!serviceAccountJson) {
     throw new Error('FIREBASE_SERVICE_ACCOUNT env var is MISSING');
   }
@@ -23,7 +26,7 @@ function getAdminMessaging() {
   }
 
   if (!serviceAccount.private_key || !serviceAccount.client_email) {
-    throw new Error('Service account JSON incomplete');
+    throw new Error('Service account JSON incomplete (missing private_key or client_email)');
   }
 
   try {
@@ -32,9 +35,9 @@ function getAdminMessaging() {
         credential: admin.credential.cert(serviceAccount),
         databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
       },
-      ADMIN_APP_NAME
+      ADMIN_APP_NAME // ✅ Nama khusus di sini
     );
-    console.log('✅ Firebase Admin initialized');
+    console.log('✅ Firebase Admin initialized with name:', ADMIN_APP_NAME);
     return admin.messaging(app);
   } catch (e) {
     throw new Error(`Admin init failed: ${e.message}`);
@@ -46,6 +49,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
+  // ✅ Inisialisasi dengan try-catch yang jelas
   let messaging;
   try {
     messaging = getAdminMessaging();
@@ -83,18 +87,16 @@ export default async function handler(req, res) {
     }
 
     // Ambil semua token FCM
-    let allTokensWithReceiverId = [];
+    let allTokens = [];
     for (const userId of receivers) {
       const snap = await get(ref(db, `users/${userId}/fcm_tokens`));
       const tokens = snap.val();
       if (tokens && Array.isArray(tokens)) {
-        tokens.forEach(token => {
-          allTokensWithReceiverId.push({ token, userId });
-        });
+        allTokens.push(...tokens);
       }
     }
 
-    if (allTokensWithReceiverId.length === 0) {
+    if (allTokens.length === 0) {
       return res.status(400).json({
         message: 'Tidak ada token FCM valid',
         receivers: receivers.length
@@ -110,30 +112,15 @@ export default async function handler(req, res) {
       })
     );
 
-    // ✅ KIRIM PUSH dengan data penerima
+    // ✅ Kirim push menggunakan messaging instance yang benar
     const results = await Promise.allSettled(
-      allTokensWithReceiverId.map(({ token, userId }) =>
+      allTokens.map(token =>
         messaging.send({
-          token: token,
-          notification: {
-            title: title,
-            body: body,
-            icon: '/dolan.png' // ✅ Logo dari public folder
-          },
-          // ✅ TAMBAH data agar Service Worker tahu siapa penerima-nya
-          data: {
-            userId: userId, // ID user yang menerima
-            click_action: `https://notifs-peach.vercel.app/user/${userId}` // URL tujuan saat diklik
-          },
+          token,
+          notification: { title, body },
           webpush: {
-            notification: {
-              requireInteraction: true,
-              icon: '/dolan.png', // ✅ Logo di sini juga
-              badge: '/dolan.png'
-            },
-            fcmOptions: {
-              link: `https://notifs-peach.vercel.app/user/${userId}` // ✅ URL tujuan
-            }
+            notification: { requireInteraction: true, icon: '/favicon.ico' },
+            fcmOptions: { link: 'https://ns.vercel.app/user' }
           }
         })
       )
@@ -145,7 +132,7 @@ export default async function handler(req, res) {
     res.status(200).json({
       message: 'Notifikasi diproses',
       receivers: receivers.length,
-      tokensTotal: allTokensWithReceiverId.length,
+      tokensTotal: allTokens.length,
       pushSuccess: success,
       pushFailed: failed
     });
