@@ -3,47 +3,40 @@ import admin from 'firebase-admin';
 import { db } from '../../lib/firebase';
 import { ref, push, set, get } from 'firebase/database';
 
-const ADMIN_APP_NAME = 'admin-app';
-
 function getAdminMessaging() {
-  // ✅ PERBAIKAN: Cek apakah app sudah ada
-  let app;
-  if (admin.apps.length === 0) {
-    // Belum ada app, buat baru
-    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
-    if (!serviceAccountJson) {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT env var is MISSING');
-    }
-
-    let serviceAccount;
-    try {
-      serviceAccount = JSON.parse(serviceAccountJson);
-    } catch (e) {
-      throw new Error(`Invalid JSON: ${e.message}`);
-    }
-
-    if (!serviceAccount.private_key || !serviceAccount.client_email) {
-      throw new Error('Service account incomplete');
-    }
-
-    try {
-      app = admin.initializeApp(
-        {
-          credential: admin.credential.cert(serviceAccount),
-          databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
-        }
-      );
-      console.log('✅ Firebase Admin initialized');
-    } catch (e) {
-      throw new Error(`Admin init failed: ${e.message}`);
-    }
-  } else {
-    // App sudah ada, gunakan yang ada
-    app = admin.app();
-    console.log('✅ Using existing Firebase Admin app');
+  // ✅ Cek apakah Firebase Admin sudah ter-inisialisasi
+  if (admin.apps.length > 0) {
+    // Sudah ada, gunakan yang ada
+    return admin.messaging(admin.apps[0]);
   }
 
-  return admin.messaging(app);
+  // Belum ada, buat baru
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!serviceAccountJson) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT env var is MISSING');
+  }
+
+  let serviceAccount;
+  try {
+    serviceAccount = JSON.parse(serviceAccountJson);
+  } catch (e) {
+    throw new Error(`Invalid JSON: ${e.message}`);
+  }
+
+  if (!serviceAccount.private_key || !serviceAccount.client_email) {
+    throw new Error('Service account incomplete');
+  }
+
+  try {
+    const app = admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
+    });
+    console.log('✅ Firebase Admin initialized');
+    return admin.messaging(app);
+  } catch (e) {
+    throw new Error(`Admin init failed: ${e.message}`);
+  }
 }
 
 export default async function handler(req, res) {
@@ -71,21 +64,26 @@ export default async function handler(req, res) {
   try {
     let receivers = [];
 
+    // ✅ LOGIC: Tentukan penerima berdasarkan targetType
     if (targetType === 'all') {
+      // Kirim ke SEMUA user
       const snapshot = await get(ref(db, 'users'));
       const data = snapshot.val();
       if (data) {
         receivers = Object.keys(data).filter(key => data[key].role === 'user');
       }
-    } else if (targetType === 'specific' && Array.isArray(targetIds)) {
+      console.log(`📢 Broadcast mode: ${receivers.length} user`);
+    } else if (targetType === 'specific' && Array.isArray(targetIds) && targetIds.length > 0) {
+      // Kirim ke user SPESIFIK
       receivers = targetIds;
+      console.log(`👤 Specific mode: ${receivers.length} user`);
     }
 
     if (receivers.length === 0) {
       return res.status(400).json({ message: 'Tidak ada penerima valid' });
     }
 
-    // Ambil semua token FCM
+    // ✅ Ambil semua token FCM dengan userId
     let allTokensWithUserId = [];
     for (const userId of receivers) {
       const snap = await get(ref(db, `users/${userId}/fcm_tokens`));
@@ -104,7 +102,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // Simpan ke RTDB
+    // ✅ Simpan ke RTDB (untuk riwayat)
     const msgData = {
       title,
       content: body,
@@ -119,7 +117,7 @@ export default async function handler(req, res) {
       })
     );
 
-    // ✅ Kirim push
+    // ✅ Kirim PUSH ke semua token
     const results = await Promise.allSettled(
       allTokensWithUserId.map(({ token, userId }) =>
         messaging.send({
@@ -143,6 +141,12 @@ export default async function handler(req, res) {
               link: `https://notifs-peach.vercel.app/user/${userId}`
             }
           }
+        }).then(msgId => {
+          console.log(`✅ Sent to ${userId}`);
+          return msgId;
+        }).catch(err => {
+          console.error(`❌ Failed ${userId}:`, err.message);
+          throw err;
         })
       )
     );
@@ -150,8 +154,11 @@ export default async function handler(req, res) {
     const success = results.filter(r => r.status === 'fulfilled').length;
     const failed = results.filter(r => r.status === 'rejected').length;
 
+    console.log(`📊 Results: ${success} success, ${failed} failed`);
+
     res.status(200).json({
       message: 'Notifikasi diproses',
+      mode: targetType === 'all' ? 'Broadcast' : 'Specific',
       receivers: receivers.length,
       tokensTotal: allTokensWithUserId.length,
       pushSuccess: success,
