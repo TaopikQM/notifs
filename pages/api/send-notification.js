@@ -3,15 +3,21 @@ import admin from 'firebase-admin';
 import { db } from '../../lib/firebase';
 import { ref, push, set, get } from 'firebase/database';
 
+// ✅ Gunakan nama khusus "admin-app" agar tidak bentrok dengan firebase client
+const ADMIN_APP_NAME = 'admin-app';
+
 function getAdminMessaging() {
-  // ✅ Cek apakah Firebase Admin sudah ter-inisialisasi
-  if (admin.apps.length > 0) {
-    // Sudah ada, gunakan yang ada
-    return admin.messaging(admin.apps[0]);
+  // Jika app admin sudah ada, kembalikan messaging-nya
+ let app = admin.apps.find(app => app.name === ADMIN_APP_NAME);
+
+  if (app) {
+    // App sudah ada, gunakan yang ada
+    console.log('✅ Using existing Firebase Admin app:', ADMIN_APP_NAME);
+    return admin.messaging(app);
   }
 
-  // Belum ada, buat baru
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
+
   if (!serviceAccountJson) {
     throw new Error('FIREBASE_SERVICE_ACCOUNT env var is MISSING');
   }
@@ -20,19 +26,22 @@ function getAdminMessaging() {
   try {
     serviceAccount = JSON.parse(serviceAccountJson);
   } catch (e) {
-    throw new Error(`Invalid JSON: ${e.message}`);
+    throw new Error(`Invalid JSON in FIREBASE_SERVICE_ACCOUNT: ${e.message}`);
   }
 
   if (!serviceAccount.private_key || !serviceAccount.client_email) {
-    throw new Error('Service account incomplete');
+    throw new Error('Service account JSON incomplete (missing private_key or client_email)');
   }
 
   try {
-    const app = admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
-    });
-    console.log('✅ Firebase Admin initialized');
+    const app = admin.initializeApp(
+      {
+        credential: admin.credential.cert(serviceAccount),
+        databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
+      },
+      ADMIN_APP_NAME // ✅ Nama khusus di sini
+    );
+    console.log('✅ Firebase Admin initialized with name:', ADMIN_APP_NAME);
     return admin.messaging(app);
   } catch (e) {
     throw new Error(`Admin init failed: ${e.message}`);
@@ -44,6 +53,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
+  // ✅ Inisialisasi dengan try-catch yang jelas
   let messaging;
   try {
     messaging = getAdminMessaging();
@@ -51,7 +61,9 @@ export default async function handler(req, res) {
     console.error('❌ Admin init error:', initError.message);
     return res.status(500).json({
       message: 'Server config error',
-      error: initError.message
+      error: initError.message,
+      envExists: !!process.env.FIREBASE_SERVICE_ACCOUNT,
+      envLength: process.env.FIREBASE_SERVICE_ACCOUNT?.length || 0
     });
   }
 
@@ -64,52 +76,39 @@ export default async function handler(req, res) {
   try {
     let receivers = [];
 
-    // ✅ LOGIC: Tentukan penerima berdasarkan targetType
     if (targetType === 'all') {
-      // Kirim ke SEMUA user
       const snapshot = await get(ref(db, 'users'));
       const data = snapshot.val();
       if (data) {
         receivers = Object.keys(data).filter(key => data[key].role === 'user');
       }
-      console.log(`📢 Broadcast mode: ${receivers.length} user`);
-    } else if (targetType === 'specific' && Array.isArray(targetIds) && targetIds.length > 0) {
-      // Kirim ke user SPESIFIK
+    } else if (targetType === 'specific' && Array.isArray(targetIds)) {
       receivers = targetIds;
-      console.log(`👤 Specific mode: ${receivers.length} user`);
     }
 
     if (receivers.length === 0) {
       return res.status(400).json({ message: 'Tidak ada penerima valid' });
     }
 
-    // ✅ Ambil semua token FCM dengan userId
-    let allTokensWithUserId = [];
+    // Ambil semua token FCM
+    let allTokens = [];
     for (const userId of receivers) {
       const snap = await get(ref(db, `users/${userId}/fcm_tokens`));
       const tokens = snap.val();
       if (tokens && Array.isArray(tokens)) {
-        tokens.forEach(token => {
-          allTokensWithUserId.push({ token, userId });
-        });
+        allTokens.push(...tokens);
       }
     }
 
-    if (allTokensWithUserId.length === 0) {
+    if (allTokens.length === 0) {
       return res.status(400).json({
         message: 'Tidak ada token FCM valid',
         receivers: receivers.length
       });
     }
 
-    // ✅ Simpan ke RTDB (untuk riwayat)
-    const msgData = {
-      title,
-      content: body,
-      senderId: 'api_system',
-      timestamp: Date.now(),
-      type: targetType
-    };
+    // Simpan ke RTDB
+    const msgData = { title, content: body, senderId: 'api_system', timestamp: Date.now(), type: targetType };
     await Promise.all(
       receivers.map(rId => {
         const rRef = push(ref(db, 'messages'));
@@ -117,36 +116,16 @@ export default async function handler(req, res) {
       })
     );
 
-    // ✅ Kirim PUSH ke semua token
+    // ✅ Kirim push menggunakan messaging instance yang benar
     const results = await Promise.allSettled(
-      allTokensWithUserId.map(({ token, userId }) =>
+      allTokens.map(token =>
         messaging.send({
           token,
-          notification: {
-            title,
-            body,
-            icon: '/dolan.png'
-          },
-          data: {
-            userId: userId,
-            click_action: `https://notifs-peach.vercel.app/user/${userId}`
-          },
+          notification: { title, body },
           webpush: {
-            notification: {
-              requireInteraction: true,
-              icon: '/dolan.png',
-              badge: '/dolan.png'
-            },
-            fcmOptions: {
-              link: `https://notifs-peach.vercel.app/user/${userId}`
-            }
+            notification: { requireInteraction: true, icon: '/dolan.png' },
+            fcmOptions: { link: 'https://ns.vercel.app/user' }
           }
-        }).then(msgId => {
-          console.log(`✅ Sent to ${userId}`);
-          return msgId;
-        }).catch(err => {
-          console.error(`❌ Failed ${userId}:`, err.message);
-          throw err;
         })
       )
     );
@@ -154,23 +133,17 @@ export default async function handler(req, res) {
     const success = results.filter(r => r.status === 'fulfilled').length;
     const failed = results.filter(r => r.status === 'rejected').length;
 
-    console.log(`📊 Results: ${success} success, ${failed} failed`);
-
     res.status(200).json({
       message: 'Notifikasi diproses',
-      mode: targetType === 'all' ? 'Broadcast' : 'Specific',
       receivers: receivers.length,
-      tokensTotal: allTokensWithUserId.length,
+      tokensTotal: allTokens.length,
       pushSuccess: success,
       pushFailed: failed
     });
 
   } catch (error) {
     console.error('API Runtime Error:', error);
-    res.status(500).json({
-      message: 'Internal Server Error',
-      error: error.message
-    });
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
   }
 }
 
