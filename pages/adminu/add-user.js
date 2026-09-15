@@ -267,6 +267,123 @@ export default function AddUserPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* User A Section */}
+            <div className="rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+              <h3 className="mb-3 font-semibold text-indigo-300">👤 User Pengirim (A)</h3>
+              
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-slate-300">
+                  Nama User
+                </label>
+                <input
+                  value={userA}
+                  onChange={(e) => setUserA(e.target.value)}
+                  placeholder="contoh: user1"
+                  disabled={loading || checking}
+                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-2 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-60"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 mb-3">
+                <input
+                  type="checkbox"
+                  id="lockA"
+                  checked={lockUserA}
+                  onChange={(e) => setLockUserA(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-600 bg-slate-950 text-indigo-600 focus:ring-2 focus:ring-indigo-500"
+                />
+                <label htmlFor="lockA" className="text-sm font-medium text-slate-300 cursor-pointer">
+                  🔒 Aktifkan PIN Lock untuk User A
+                </label>
+              </div>
+
+              {lockUserA && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-300">
+                    Set PIN (4-6 digit)
+                  </label>
+                  <input
+                    type="password"
+                    value={pinUserA}
+                    onChange={(e) => setPinUserA(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="Masukkan PIN 4-6 digit"
+                    maxLength="6"
+                    disabled={loading || checking}
+                    className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-2 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 disabled:opacity-60"
+                  />
+                  <p className="mt-1 text-xs text-slate-400">PIN: {pinUserA || "---"}</p>
+                </div>
+              )}
+            </div>
+
+            {/* User B Section */}
+            <div className="rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+              <h3 className="mb-3 font-semibold text-emerald-300">👤 User Penerima (B)</h3>
+              
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-slate-300">
+                  Nama User
+                </label>
+                <input
+                  value={userB}
+                  onChange={(e) => setUserB(e.target.value)}
+                  placeholder="contoh: user2"
+                  disabled={loading || checking}
+                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-2 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 disabled:opacity-60"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 mb-3">
+                <input
+                  type="checkbox"
+                  id="lockB"
+                  checked={lockUserB}
+                  onChange={(e) => setLockUserB(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-600 bg-slate-950 text-emerald-600 focus:ring-2 focus:ring-emerald-500"
+                />
+                <label htmlFor="lockB" className="text-sm font-medium text-slate-300 cursor-pointer">
+                  🔒 Aktifkan PIN Lock untuk User B
+                </label>
+              </div>
+
+              {lockUserB && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-300">
+                    Set PIN (4-6 digit)
+                  </label>
+                  <input
+                    type="password"
+                    value={pinUserB}
+                    onChange={(e) => setPinUserB(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="Masukkan PIN 4-6 digit"
+                    maxLength="6"
+                    disabled={loading || checking}
+                    className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-2 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 disabled:opacity-60"
+                  />
+                  <p className="mt-1 text-xs text-slate-400">PIN: {pinUserB || "---"}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={validateUsers}
+                disabled={loading || checking}
+                className="flex-1 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 font-semibold text-amber-200 transition hover:bg-amber-500/20 disabled:opacity-60"
+              >
+                {checking ? "Memeriksa..." : "✓ Validasi User"}
+              </button>
+
+              <button
+                type="submit"
+                disabled={loading || checking}
+                className="flex-1 rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60"
+              >
+                {loading ? "Menyimpan..." : "💾 Simpan Pair"}
+              </button>
+            </div>
+{/*
             <div>
               <label className="block text-sm font-medium text-slate-300">
                  <input
@@ -309,9 +426,9 @@ export default function AddUserPage() {
                   )}
               </div>
             </div>
-
+*/}
             {/* PIN Input A */}
-            {lockUserA && (
+{/*   {lockUserA && (
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-300">
                   <span className="flex items-center gap-2">
@@ -374,9 +491,9 @@ export default function AddUserPage() {
                   )}
                 </div>
             </div>
-
+*/}
             {/* PIN Input B */}
-            {lockUserB && (
+{/*       {lockUserB && (
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-300">
                   <span className="flex items-center gap-2">
@@ -414,7 +531,7 @@ export default function AddUserPage() {
               >
                 {loading ? "Menyimpan..." : "Simpan Pair"}
               </button>
-            </div>
+            </div>*/}
           </form>
 
           <div className="mt-6 rounded-xl border border-slate-800 bg-slate-950/50 p-4 text-xs text-slate-400">
