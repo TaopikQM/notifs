@@ -72,9 +72,30 @@ export default function AddUserPage() {
     setError("");
     setSuccess("");
 
-    const isValid = await validateUsers();
-    if (!isValid) return;
+    // const isValid = await validateUsers();
+    // if (!isValid) return;
 
+    // setLoading(true);
+     // ✅ Validasi manual saja, jangan panggil validateUsers lagi
+    const cleanA = userA.trim().toLowerCase();
+    const cleanB = userB.trim().toLowerCase();
+  
+    if (!cleanA || !cleanB) {
+      setError("Mohon isi kedua nama pengguna.");
+      return;
+    }
+  
+    if (cleanA === cleanB) {
+      setError("Pengguna A dan B tidak boleh sama.");
+      return;
+    }
+  
+    // ✅ Cek apakah validasi sudah berhasil sebelumnya (checkResult)
+    if (!checkResult || !checkResult.userA.exists || !checkResult.userB.exists) {
+      setError("Silakan validasi pengguna terlebih dahulu.");
+      return;
+    }
+  
     setLoading(true);
 
     try {
