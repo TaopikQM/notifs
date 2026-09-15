@@ -1,4 +1,4 @@
-import { ref, get, push, update } from "../../lib/firebase";
+import { ref, get, push, update, database} from "../../lib/firebase";
 import { getWIBTime } from "../../lib/firebase";
 
 export default async function handler(req, res) {
