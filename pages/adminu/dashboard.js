@@ -1,3 +1,4 @@
+import React from 'react'; // ✅ Tambahkan baris ini
 import { useState, useEffect } from "react";
 import { ref, get, set, remove, database, onValue } from "../../lib/firebase";
 
