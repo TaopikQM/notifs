@@ -102,10 +102,10 @@ export default function AddUserPage() {
       return;
     }
 
-    if (checkResult || checkResult.userA.exists || checkResult.userB.exists) {
-      setError("Silakan validasi pengguna terlebih dahulu.");
-      return;
-    }
+    // if (checkResult || checkResult.userA.exists || checkResult.userB.exists) {
+    //   setError("Silakan validasi pengguna terlebih dahulu.");
+    //   return;
+    // }
 
     setLoading(true);
 
