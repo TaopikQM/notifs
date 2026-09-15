@@ -18,7 +18,8 @@ export default function AdminDashboard() {
 
   // Load semua data user dari Firebase
   useEffect(() => {
-    const usersRef = ref(database, "users");
+    // const usersRef = ref(database, "users");
+    const usersRef = ref(database, "chat-pairs");
     const unsubscribe = onValue(usersRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.val();
