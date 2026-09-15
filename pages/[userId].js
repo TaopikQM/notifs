@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { ref, onValue, off, database } from "../lib/firebase";
-import { getChatPairKey } from "../lib/firebase";
+import { getChatPairKey, formatLastSeen  } from "../lib/firebase";
 
 export default function ChatPage() {
   const router = useRouter();
