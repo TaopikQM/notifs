@@ -10,6 +10,18 @@ export default function AddUserPage() {
   const [success, setSuccess] = useState("");
   const [checkResult, setCheckResult] = useState(null);
 
+   // Lock state
+  const [lockUserA, setLockUserA] = useState(false);
+  const [lockUserB, setLockUserB] = useState(false);
+  
+  // PIN state
+  const [pinA, setPinA] = useState("");
+  const [pinB, setPinB] = useState("");
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinForUser, setPinForUser] = useState("");
+  const [tempPinA, setTempPinA] = useState("");
+  const [tempPinB, setTempPinB] = useState("");
+
   const checkUserExists = async (userId) => {
     const cleanId = String(userId).trim().toLowerCase();
     if (!cleanId) {
@@ -102,6 +114,23 @@ export default function AddUserPage() {
       return;
     }
 
+    // Collect PINs if locked
+    const pinData = {};
+    if (lockUserA) {
+      if (!pinA) {
+        setError("PIN untuk User A wajib diisi.");
+        return;
+      }
+      pinData[cleanA] = pinA;
+    }
+    if (lockUserB) {
+      if (!pinB) {
+        setError("PIN untuk User B wajib diisi.");
+        return;
+      }
+      pinData[cleanB] = pinB;
+    }
+
     // if (checkResult || checkResult.userA.exists || checkResult.userB.exists) {
     //   setError("Silakan validasi pengguna terlebih dahulu.");
     //   return;
@@ -118,6 +147,9 @@ export default function AddUserPage() {
           userA: cleanA,
           userB: cleanB,
           createdBy: "admin",
+          lockUserA,
+          lockUserB,
+          pinData,
         }),
       });
 
@@ -131,6 +163,10 @@ export default function AddUserPage() {
       setSuccess(`✅ Pair "${data.key}" berhasil dibuat. ${data.data.updatedAt}`);
       setUserA("");
       setUserB("");
+      setLockUserA(false);
+      setLockUserB(false);
+      setPinA("");
+      setPinB("");
       setCheckResult(null);
     } catch (err) {
       console.error("[DEBUG] Submit error:", err);
@@ -138,6 +174,46 @@ export default function AddUserPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLockToggle = (user, checked) => {
+    if (checked) {
+      setShowPinModal(true);
+      setPinForUser(user);
+      if (user === "userA") {
+        setTempPinA(pinA);
+      } else {
+        setTempPinB(pinB);
+      }
+    } else {
+      if (user === "userA") {
+        setLockUserA(false);
+        setPinA("");
+      } else {
+        setLockUserB(false);
+        setPinB("");
+      }
+    }
+  };
+
+  const confirmPin = () => {
+    if (pinForUser === "userA") {
+      setPinA(tempPinA);
+      setLockUserA(true);
+    } else {
+      setPinB(tempPinB);
+      setLockUserB(true);
+    }
+    setShowPinModal(false);
+  };
+
+  const cancelPin = () => {
+    if (pinForUser === "userA") {
+      setLockUserA(false);
+    } else {
+      setLockUserB(false);
+    }
+    setShowPinModal(false);
   };
 
   return (
@@ -193,29 +269,133 @@ export default function AddUserPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-300">
-                User Pengirim (A)
+                 <input
+                  type="checkbox"
+                  checked={lockUserA}
+                  onChange={(e) => handleLockToggle("userA", e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500"
+                />
+                 <span className="flex items-center gap-2">
+                  User Pengirim (A)
+                  {lockUserA && (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      Terkunci
+                    </span>
+                  )}
+                </span>
               </label>
-              <input
-                value={userA}
-                onChange={(e) => setUserA(e.target.value)}
-                placeholder="contoh: user12"
-                disabled={loading || checking}
-                className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-60"
-              />
+              <div className="flex gap-2">
+                <input
+                  value={userA}
+                  onChange={(e) => setUserA(e.target.value)}
+                  placeholder="contoh: user12"
+                  disabled={loading || checking}
+                  className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-60"
+                />
+                {lockUserA && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLockUserA(false);
+                        setPinA("");
+                      }}
+                      className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 text-sm font-semibold text-red-300 hover:bg-red-500/20"
+                    >
+                      UnLock
+                    </button>
+                  )}
+              </div>
             </div>
+
+            {/* PIN Input A */}
+            {lockUserA && (
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  <span className="flex items-center gap-2">
+                    <svg className="h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11.5 13.5l-2.243-2.243A6 6 0 016.5 5.743 6 6 0 0110.5 5.743 6 6 0 0115 7z" />
+                    </svg>
+                    PIN untuk User A ({userA || "user12"})
+                  </span>
+                </label>
+                <input
+                  type="password"
+                  value={pinA}
+                  onChange={(e) => setPinA(e.target.value)}
+                  placeholder="Masukkan PIN (4-6 digit)"
+                  maxLength={6}
+                  className="w-full rounded-xl border border-emerald-700 bg-slate-950/60 px-4 py-3 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30"
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-slate-300">
-                User Penerima (B)
+                <input
+                  type="checkbox"
+                  checked={lockUserB}
+                  onChange={(e) => handleLockToggle("userB", e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="flex items-center gap-2">
+                  User Penerima (B)
+                  {lockUserB && (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      Terkunci
+                    </span>
+                  )}
+                </span>
               </label>
-              <input
-                value={userB}
-                onChange={(e) => setUserB(e.target.value)}
-                placeholder="contoh: user2"
-                disabled={loading || checking}
-                className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-60"
-              />
+              <div className="flex gap-2">
+                <input
+                  value={userB}
+                  onChange={(e) => setUserB(e.target.value)}
+                  placeholder="contoh: user2"
+                  disabled={loading || checking}
+                  className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-60"
+                />
+                {lockUserB && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLockUserB(false);
+                        setPinB("");
+                      }}
+                      className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 text-sm font-semibold text-red-300 hover:bg-red-500/20"
+                    >
+                      UnLock
+                    </button>
+                  )}
+                </div>
             </div>
+
+            {/* PIN Input B */}
+            {lockUserB && (
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">
+                  <span className="flex items-center gap-2">
+                    <svg className="h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11.5 13.5l-2.243-2.243A6 6 0 016.5 5.743 6 6 0 0110.5 5.743 6 6 0 0115 7z" />
+                    </svg>
+                    PIN untuk User B ({userB || "user2"})
+                  </span>
+                </label>
+                <input
+                  type="password"
+                  value={pinB}
+                  onChange={(e) => setPinB(e.target.value)}
+                  placeholder="Masukkan PIN (4-6 digit)"
+                  maxLength={6}
+                  className="w-full rounded-xl border border-emerald-700 bg-slate-950/60 px-4 py-3 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30"
+                />
+              </div>
+            )}
 
             <div className="flex gap-3">
               <button
