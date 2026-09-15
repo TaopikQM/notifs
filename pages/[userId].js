@@ -3,7 +3,8 @@ import { useRouter } from "next/router";
 import { ref, onValue, off, database } from "../lib/firebase";
 import { getChatPairKey, formatLastSeen,  setUserOnline,
   setUserOffline,
-  getUserPresence,  } from "../lib/firebase";
+  getUserPresence, 
+  startHeartbeat, } from "../lib/firebase";
 
 export default function ChatPage() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function ChatPage() {
   const [currentUserPresence, setCurrentUserPresence] = useState(null);
   const [otherUserStatus, setOtherUserStatus] = useState(null);//ini gagal offline
   const messagesEndRef = useRef(null);
+  const heartbeatRef = useRef(null);
 
   // Auto scroll ke bawah
   const scrollToBottom = () => {
@@ -26,6 +28,63 @@ export default function ChatPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Set user online + heartbeat + visibility listener
+  useEffect(() => {
+    if (!userId) return;
+
+    const initPresence = async () => {
+      await setUserOnline(userId);
+      const presence = await getUserPresence(userId);
+      setCurrentUserPresence(presence);
+
+      // Start heartbeat setiap 30 detik
+      heartbeatRef.current = startHeartbeat(userId, 30000);
+
+      // Handle visibility change (tab minimize/hidden)
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          console.log("[Visibility] Tab hidden - user offline");
+          setUserOffline(userId);
+          if (heartbeatRef.current) {
+            clearInterval(heartbeatRef.current);
+            heartbeatRef.current = null;
+          }
+        } else {
+          console.log("[Visibility] Tab visible - user online");
+          setUserOnline(userId);
+          if (!heartbeatRef.current) {
+            heartbeatRef.current = startHeartbeat(userId, 30000);
+          }
+        }
+      };
+
+      // Handle beforeunload (close tab/refresh)
+      const handleBeforeUnload = () => {
+        console.log("[BeforeUnload] Setting offline");
+        setUserOffline(userId);
+        if (heartbeatRef.current) {
+          clearInterval(heartbeatRef.current);
+        }
+      };
+
+      // Add event listeners
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+      window.addEventListener("beforeunload", handleBeforeUnload);
+
+      // Cleanup
+      return () => {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+        window.removeEventListener("beforeunload", handleBeforeUnload);
+        setUserOffline(userId);
+        if (heartbeatRef.current) {
+          clearInterval(heartbeatRef.current);
+        }
+      };
+    };
+
+    initPresence();
+  }, [userId]);
 
 // Set user online saat masuk halaman
   useEffect(() => {
