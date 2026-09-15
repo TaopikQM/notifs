@@ -309,9 +309,13 @@ export default function AdminDashboard() {
     );
   };
 
-  const handleStatusToggle = async (id, newStatus) => {
+    // --- HANDLE STATUS TOGGLE (Satu Tombol) ---
+  const handleStatusToggle = async (id) => {
     const user = users.find(u => u.id === id);
     if (!user) return;
+
+    // Toggle: active → inactive, inactive → active
+    const newStatus = user.status === "active" ? "inactive" : "active";
 
     try {
       const oldData = { ...user };
@@ -321,10 +325,9 @@ export default function AdminDashboard() {
       await set(ref(database, `chat-pairs/${id}`), updatedUser);
 
       // Simpan ke log
-            // Simpan ke log
       await saveToLog(id, oldData, updatedUser);
 
-      alert(`✅ Status berhasil diubah menjadi ${newStatus}`);
+      console.log(`✅ Status ${id} berhasil diubah menjadi ${newStatus}`);
     } catch (err) {
       console.error("Error updating status:", err);
       alert("Gagal mengubah status");
@@ -463,31 +466,21 @@ export default function AdminDashboard() {
                                     <span className="text-xs text-slate-500">Created By:</span>
                                     <div>{renderEditableField(user.id, "createdBy", user.createdBy)}</div>
                                   </div>
-                                    <div>
-                                      <span className="text-xs text-slate-500">Status:</span>
-                                      <div className="flex items-center gap-2">
-                                        <button
-                                          onClick={() => handleStatusToggle(user.id, "active")}
-                                          className={`px-3 py-1 rounded-md text-sm font-medium transition ${
-                                            user.status === "active"
-                                              ? "bg-emerald-600 text-white"
-                                              : "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
-                                          }`}
-                                        >
-                                          ✅ Active
-                                        </button>
-                                        <button
-                                          onClick={() => handleStatusToggle(user.id, "inactive")}
-                                          className={`px-3 py-1 rounded-md text-sm font-medium transition ${
-                                            user.status === "inactive"
-                                              ? "bg-red-600 text-white"
-                                              : "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                                          }`}
-                                        >
-                                          ❌ Inactive
-                                        </button>
-                                      </div>
+                                                                     <div>
+                                    <span className="text-xs text-slate-500">Status:</span>
+                                    <div className="mt-1">
+                                      <button
+                                        onClick={() => handleStatusToggle(user.id)}
+                                        className={`px-6 py-2 rounded-lg text-sm font-semibold transition shadow-lg ${
+                                          user.status === "active"
+                                            ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/50"
+                                            : "bg-red-600 text-white hover:bg-red-700 shadow-red-600/50"
+                                        }`}
+                                      >
+                                        {user.status === "active" ? "✅ Active" : "❌ Inactive"}
+                                      </button>
                                     </div>
+                                  </div>
 { /* <div>
                                     <span className="text-xs text-slate-500">Status:</span>
                                     <div>{renderEditableField(user.id, "status", user.status)}</div>
