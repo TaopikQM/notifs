@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { ref, get, database, } from "../../lib/firebase";
+import { ref, get, database } from "../../lib/firebase";
 
 export default function AddUserPage() {
   const [userA, setUserA] = useState("");
@@ -15,8 +15,16 @@ export default function AddUserPage() {
     const cleanId = String(userId).trim().toLowerCase();
     if (!cleanId) return { id: cleanId, exists: false };
 
-    const snapshot = await get(ref(database, `users/${cleanId}`));
-    return { id: cleanId, exists: snapshot.exists() };
+     try {
+      const snapshot = await get(ref(database, `users/${cleanId}`));
+      return { id: cleanId, exists: snapshot.exists() };
+    } catch (err) {
+      console.error("Error checking user:", err);
+      return { id: cleanId, exists: false };
+    }
+
+    // const snapshot = await get(ref(database, `users/${cleanId}`));
+    // return { id: cleanId, exists: snapshot.exists() };
   };
 
   const validateUsers = async () => {
@@ -60,7 +68,6 @@ export default function AddUserPage() {
     } catch (err) {
       setError("Gagal memeriksa pengguna ke database.");
       console.error(err);
-      return;
     } finally {
       setChecking(false);
     }
