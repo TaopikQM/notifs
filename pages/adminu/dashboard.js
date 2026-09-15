@@ -49,10 +49,10 @@ export default function AdminDashboard() {
   };
 
   const sortedUsers = [...users].sort((a, b) => {
-    if (sortConfig.key === "createdAt") {
+    if (sortConfig.key === "createdAtISO") {
       return sortConfig.direction === "asc" 
-        ? a.createdAt.localeCompare(b.createdAt)
-        : b.createdAt.localeCompare(a.createdAt);
+        ? a.createdAtISO.localeCompare(b.createdAtISO)
+        : b.createdAtISO.localeCompare(a.createdAtISO);
     }
     if (sortConfig.key === "id") {
       return sortConfig.direction === "asc"
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
   });
 
   // Filter berdasarkan Search
-  const filteredUsers = sortedUsers.filter((user) => {
+  const filteredUsersaa = sortedUsers.filter((user) => {
     const term = searchTerm.toLowerCase();
     return (
       user.id.toLowerCase().includes(term) ||
@@ -72,6 +72,46 @@ export default function AdminDashboard() {
     );
   });
 
+    // Helper: Cek apakah ada string di dalam objek (nested) yang cocok dengan search term
+  const matchesSearch = (obj, term) => {
+    if (!obj) return false;
+    
+    // Jika obj adalah string/number/boolean, cek langsung
+    if (typeof obj === "string" || typeof obj === "number" || typeof obj === "boolean") {
+      return String(obj).toLowerCase().includes(term);
+    }
+
+    // Jika obj adalah array, cek setiap item
+    if (Array.isArray(obj)) {
+      return obj.some(item => matchesSearch(item, term));
+    }
+
+    // Jika obj adalah object, cek setiap value
+    if (typeof obj === "object") {
+      return Object.values(obj).some(value => matchesSearch(value, term));
+
+       // Skip field yang di-exclude
+        if (excludeKeys.includes(key.toLowerCase())) return false;
+        return matchesSearch(value, term, excludeKeys);
+    }
+
+    return false;
+  };
+
+  // Filter berdasarkan Search (Universal Search)
+  const filteredUsers = sortedUsers.filter((user) => {
+    const term = searchTerm.toLowerCase();
+    if (!term) return true; // Jika kosong, tampilkan semua
+
+    // Cari di ID user
+    if (user.id.toLowerCase().includes(term)) return true;
+
+    // Cari di SEMUA data user lainnya secara rekursif
+    // Ini akan mengecek name, email, createdAt, status, lockSettings, dll.
+    return matchesSearch(user, term);
+  });
+
+  
   // Toggle Lock (Edit)
   const toggleLock = async (user) => {
     if (editingId !== user.id) {
