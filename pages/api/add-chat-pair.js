@@ -1,5 +1,5 @@
 import { ref, get, push, update, set, database} from "../../lib/firebase";
-import { getWIBTime } from "../../lib/firebase";
+import { getWIBTime } from "../../lib/firebase"; 
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
