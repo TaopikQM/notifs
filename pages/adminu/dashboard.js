@@ -487,7 +487,7 @@ export default function AdminDashboard() {
                                         </button>
                                       </div>
                                     </div>
-                                 /* <div>
+{ /* <div>
                                     <span className="text-xs text-slate-500">Status:</span>
                                     <div>{renderEditableField(user.id, "status", user.status)}</div>
                                   </div> */}
