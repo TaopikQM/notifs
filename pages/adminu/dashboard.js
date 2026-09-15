@@ -308,6 +308,28 @@ export default function AdminDashboard() {
     );
   };
 
+  const handleStatusToggle = async (id, newStatus) => {
+    const user = users.find(u => u.id === id);
+    if (!user) return;
+
+    try {
+      const oldData = { ...user };
+      const updatedUser = { ...user, status: newStatus };
+
+      // Update ke Firebase
+      await set(ref(database, `chat-pairs/${id}`), updatedUser);
+
+      // Simpan ke log
+            // Simpan ke log
+      await saveToLog(id, oldData, updatedUser);
+
+      alert(`✅ Status berhasil diubah menjadi ${newStatus}`);
+    } catch (err) {
+      console.error("Error updating status:", err);
+      alert("Gagal mengubah status");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8">
       <div className="mx-auto w-full max-w-7xl">
@@ -440,10 +462,35 @@ export default function AdminDashboard() {
                                     <span className="text-xs text-slate-500">Created By:</span>
                                     <div>{renderEditableField(user.id, "createdBy", user.createdBy)}</div>
                                   </div>
-                                  <div>
+                                    <div>
+                                      <span className="text-xs text-slate-500">Status:</span>
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          onClick={() => handleStatusToggle(user.id, "active")}
+                                          className={`px-3 py-1 rounded-md text-sm font-medium transition ${
+                                            user.status === "active"
+                                              ? "bg-emerald-600 text-white"
+                                              : "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                                          }`}
+                                        >
+                                          ✅ Active
+                                        </button>
+                                        <button
+                                          onClick={() => handleStatusToggle(user.id, "inactive")}
+                                          className={`px-3 py-1 rounded-md text-sm font-medium transition ${
+                                            user.status === "inactive"
+                                              ? "bg-red-600 text-white"
+                                              : "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                                          }`}
+                                        >
+                                          ❌ Inactive
+                                        </button>
+                                      </div>
+                                    </div>
+                                 /* <div>
                                     <span className="text-xs text-slate-500">Status:</span>
                                     <div>{renderEditableField(user.id, "status", user.status)}</div>
-                                  </div>
+                                  </div> */}
                                 </div>
 
                                 {/* Right Column */}
