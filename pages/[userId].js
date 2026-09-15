@@ -182,22 +182,24 @@ export default function ChatPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold">{userId}</h1>
-            <p className="text-sm text-slate-400">Chat dengan: {otherUser}</p>
-             {otherUserStatus && (
-                <>
-                  <span className="text-slate-600">•</span>
-                  {otherUserStatus.status === "online" ? (
-                    <span className="flex items-center gap-1 text-green-400">
-                      <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
-                      Online
-                    </span>
-                  ) : (
-                    <span className="text-slate-500">
-                      {formatLastSeen(otherUserStatus.lastSeenTimestamp)}
-                    </span>
-                  )}
-                </>
-              )}
+              <div className="flex items-center gap-2 text-sm text-slate-400">
+                  <p className="text-sm text-slate-400">Chat dengan: {otherUser}</p>
+                   {otherUserStatus && (
+                      <>
+                        <span className="text-slate-600">•</span>
+                        {otherUserStatus.status === "online" ? (
+                          <span className="flex items-center gap-1 text-green-400">
+                            <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
+                            Online
+                          </span>
+                        ) : (
+                          <span className="text-slate-500">
+                            {formatLastSeen(otherUserStatus.lastSeenTimestamp)}
+                          </span>
+                        )}
+                      </>
+                    )}
+                </div>
           </div>
           <div className="relative">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600">
