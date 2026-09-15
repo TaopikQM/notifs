@@ -272,7 +272,7 @@ export default function ChatPage() {
     return (
       <span className="inline-flex items-center gap-1 text-xs text-slate-400">
         <span className="h-2 w-2 rounded-full bg-slate-500"></span>
-        Terakhir online: {presence.lastSeen}
+        Terakhir onli: {presence.lastSeen}
       </span>
     );
   };
@@ -326,15 +326,16 @@ export default function ChatPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold">{userId}</h1>
-     <div className="mt-1">
-                {renderStatusIndicator(otherUserPresence)}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-slate-400">
-                  <p className="text-sm text-slate-400">Chat dengan: {otherUser}</p>
-                    <p className="text-xs text-slate-400">
-              {currentUserPresence?.status === "online" ? "Online" : "Offline"}
-            </p>
-                </div>
+            <div className="mt-1">
+              {renderStatusIndicator(otherUserPresence)}
+              <p className="text-xs text-slate-400">
+                {currentUserPresence?.status === "online" ? "Online" : "Offline"}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-slate-400">
+              <p className="text-sm text-slate-400">Chat dengan: {otherUser}</p>
+                    
+            </div>
                   
           </div>
           <div className="relative">
