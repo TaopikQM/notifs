@@ -29,13 +29,13 @@ export default async function handler(req, res) {
     const userBSnapshot = await get(ref(database, `users/${cleanB}`));
     const userASnapshot = await get(userARef);
 
-    if (!userASnapshot.exists()) {
-      return res.status(404).json({ message: `Pengguna "${cleanA}" tidak ditemukan` });
-    }
+    // if (!userASnapshot.exists()) {
+    //   return res.status(404).json({ message: `Pengguna "${cleanA}" tidak ditemukan` });
+    // }
 
-    if (!userBSnapshot.exists()) {
-      return res.status(404).json({ message: `Pengguna "${cleanB}" tidak ditemukan` });
-    }
+    // if (!userBSnapshot.exists()) {
+    //   return res.status(404).json({ message: `Pengguna "${cleanB}" tidak ditemukan` });
+    // }
 
     const wib = getWIBTime();
 
