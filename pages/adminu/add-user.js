@@ -119,18 +119,18 @@ export default function AddUserPage() {
     // Collect PINs if locked
     const pinData = {};
     if (lockUserA) {
-      if (!pinA) {
+      if (!pinUserA) {
         setError("PIN untuk User A wajib diisi.");
         return;
       }
-      pinData[cleanA] = pinA;
+      pinData[cleanA] = pinUserA;
     }
     if (lockUserB) {
-      if (!pinB) {
+      if (!pinUserB) {
         setError("PIN untuk User B wajib diisi.");
         return;
       }
-      pinData[cleanB] = pinB;
+      pinData[cleanB] = pinUserB;
     }
 
     // if (checkResult || checkResult.userA.exists || checkResult.userB.exists) {
@@ -169,6 +169,8 @@ export default function AddUserPage() {
       setLockUserB(false);
       setPinA("");
       setPinB("");
+      setPinUserA("");
+      setPinUserB("");
       setCheckResult(null);
     } catch (err) {
       console.error("[DEBUG] Submit error:", err);
