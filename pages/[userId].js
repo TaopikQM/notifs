@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import { ref, onValue, off, database } from "../lib/firebase";
+import { ref, get, set, push, onValue, off, database } from "../lib/firebase";
 import { getChatPairKey, formatLastSeen,  setUserOnline,
   setUserOffline,
   getUserPresence, 
@@ -19,6 +19,13 @@ export default function ChatPage() {
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
+  
+  const [isLocked, setIsLocked] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const [correctPin, setCorrectPin] = useState(null);
+  const [pinError, setPinError] = useState("");
+  const [chatPairKey, setChatPairKey] = useState(null);
+  
   const [chatPairData, setChatPairData] = useState(null);
   const [otherUserStatus, setOtherUserStatus] = useState(null);//ini gagal offline
   const messagesEndRef = useRef(null);
