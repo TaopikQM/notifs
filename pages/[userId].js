@@ -13,6 +13,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [otherUser, setOtherUser] = useState(null);
   const [sending, setSending] = useState(false);
+  const [otherUserPresence, setOtherUserPresence] = useState(null);
   const [currentUserPresence, setCurrentUserPresence] = useState(null);
   const [otherUserStatus, setOtherUserStatus] = useState(null);//ini gagal offline
   const messagesEndRef = useRef(null);
