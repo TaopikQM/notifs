@@ -553,7 +553,7 @@ export default function AddUserPage() {
            {/* Tombol di bawah card */}
             <div className="mt-4 flex justify-end">
               <Link
-                href="/dashboard"
+                href="/adminu/dashboard"
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-700 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
               >
                 <svg
