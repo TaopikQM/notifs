@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { ref, get } from "../../lib/firebase";
+import { ref, get, database, } from "../../lib/firebase";
 
 export default function AddUserPage() {
   const [userA, setUserA] = useState("");
