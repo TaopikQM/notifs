@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { ref, onValue, off, database } from "../lib/firebase";
-import { getChatPairKey, formatLastSeen  } from "../lib/firebase";
+import { getChatPairKey, formatLastSeen,  setUserOnline,
+  setUserOffline,
+  getUserPresence,  } from "../lib/firebase";
 
 export default function ChatPage() {
   const router = useRouter();
@@ -11,7 +13,8 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [otherUser, setOtherUser] = useState(null);
   const [sending, setSending] = useState(false);
-  const [otherUserStatus, setOtherUserStatus] = useState(null);
+  const [currentUserPresence, setCurrentUserPresence] = useState(null);
+  const [otherUserStatus, setOtherUserStatus] = useState(null);//ini gagal offline
   const messagesEndRef = useRef(null);
 
   // Auto scroll ke bawah
@@ -23,6 +26,42 @@ export default function ChatPage() {
     scrollToBottom();
   }, [messages]);
 
+// Set user online saat masuk halaman
+  useEffect(() => {
+    if (!userId) return;
+
+    const initPresence = async () => {
+      await setUserOnline(userId);
+      const presence = await getUserPresence(userId);
+      setCurrentUserPresence(presence);
+    };
+
+    initPresence();
+
+    // Cleanup: Set offline saat keluar
+    return () => {
+      if (userId) {
+        setUserOffline(userId);
+      }
+    };
+  }, [userId]);
+
+   // Listen presence partner secara real-time
+  useEffect(() => {
+    if (!otherUser) return;
+
+    const presenceRef = ref(database, `user-presence/${otherUser}`);
+    const unsubscribe = onValue(presenceRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setOtherUserPresence(snapshot.val());
+      } else {
+        setOtherUserPresence(null);
+      }
+    });
+
+    return () => off(presenceRef, "value", unsubscribe);
+  }, [otherUser]);
+  
   // Set status online saat halaman dibuka
   useEffect(() => {
     if (!userId) return;
@@ -148,6 +187,36 @@ export default function ChatPage() {
     }
   };
 
+   const renderStatusIndicator = (presence) => {
+    if (!presence) {
+      return (
+        <span className="inline-flex items-center gap-1 text-xs text-slate-400">
+          <span className="h-2 w-2 rounded-full bg-slate-500"></span>
+          Offline
+        </span>
+      );
+    }
+
+    if (presence.status === "online") {
+      return (
+        <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          Online
+        </span>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-slate-400">
+        <span className="h-2 w-2 rounded-full bg-slate-500"></span>
+        Terakhir online: {presence.lastSeen}
+      </span>
+    );
+  };
+
   if (!userId) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-950 text-white">
@@ -174,6 +243,21 @@ export default function ChatPage() {
       </div>
     );
   }
+// {otherUserStatus && (
+//                       <>
+//                         <span className="text-slate-600">•</span>
+//                         {otherUserStatus.status === "online" ? (
+//                           <span className="flex items-center gap-1 text-green-400">
+//                             <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
+//                             Online
+//                           </span>
+//                         ) : (
+//                           <span className="text-slate-500">
+//                             {formatLastSeen(otherUserStatus.lastSeenTimestamp)}
+//                           </span>
+//                         )}
+//                       </>
+//                     )}
 
   return (
     <div className="flex h-screen flex-col bg-slate-950 text-slate-100">
@@ -182,33 +266,33 @@ export default function ChatPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold">{userId}</h1>
+     <div className="mt-1">
+                {renderStatusIndicator(otherUserPresence)}
+              </div>
               <div className="flex items-center gap-2 text-sm text-slate-400">
                   <p className="text-sm text-slate-400">Chat dengan: {otherUser}</p>
-                   {otherUserStatus && (
-                      <>
-                        <span className="text-slate-600">•</span>
-                        {otherUserStatus.status === "online" ? (
-                          <span className="flex items-center gap-1 text-green-400">
-                            <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
-                            Online
-                          </span>
-                        ) : (
-                          <span className="text-slate-500">
-                            {formatLastSeen(otherUserStatus.lastSeenTimestamp)}
-                          </span>
-                        )}
-                      </>
-                    )}
+                    <p className="text-xs text-slate-400">
+              {currentUserPresence?.status === "online" ? "Online" : "Offline"}
+            </p>
                 </div>
+                  
           </div>
           <div className="relative">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600">
               {userId.charAt(0).toUpperCase()}
             </div>
+             <div className="absolute -bottom-1 -right-1">
+                {currentUserPresence?.status === "online" && (
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                  </span>
+                )}
+              </div>
                {/* Online indicator di avatar */}
-              {otherUserStatus?.status === "online" && (
+{/*{otherUserStatus?.status === "online" && (
                 <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-slate-900 bg-green-400"></div>
-              )}
+              )}*/}
           </div>
         </div>
       </div>
