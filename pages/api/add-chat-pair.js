@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: "Metode tidak diizinkan" });
   }
 
-  const { userA, userB, createdBy = "admin" } = req.body || {};
+  const { userA, userB, createdBy = "admin", lockUserA = false, lockUserB = false, pinData = {} } = req.body || {};
 
   if (!userA || !userB) {
     return res.status(400).json({ message: "User A dan User B wajib diisi" });
@@ -63,6 +63,12 @@ export default async function handler(req, res) {
         : createdBy,
       updatedAt: wib.full,
       status: "active",
+      lockUserA,
+      lockUserB,
+      pins: {
+        userA: pinData[cleanA] || null,
+        userB: pinData[cleanB] || null,
+      },
       directions: {
         [`${cleanA}_to_${cleanB}`]: {
           sender: cleanA,
