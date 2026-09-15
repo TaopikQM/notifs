@@ -29,12 +29,12 @@ export default function AddUserPage() {
 
     if (!cleanA || !cleanB) {
       setError("Mohon isi kedua nama pengguna.");
-      return ;
+      return;
     }
 
     if (cleanA === cleanB) {
       setError("Pengguna A dan B tidak boleh sama.");
-      return ;
+      return;
     }
 
     setChecking(true);
@@ -49,19 +49,18 @@ export default function AddUserPage() {
 
       if (!resultA.exists) {
         setError(`Pengguna "${cleanA}" belum terdaftar di database.`);
-        return ;
+        return;
       }
 
       if (!resultB.exists) {
         setError(`Pengguna "${cleanB}" belum terdaftar di database.`);
-        return ;
+        return;
       }
 
-      // return true;
     } catch (err) {
       setError("Gagal memeriksa pengguna ke database.");
       console.error(err);
-      return ;
+      return;
     } finally {
       setChecking(false);
     }
