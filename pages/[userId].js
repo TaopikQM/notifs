@@ -21,9 +21,7 @@ export default function ChatPage() {
   const [pinError, setPinError] = useState("");
   
   const [isLocked, setIsLocked] = useState(false);
-  const [pinInput, setPinInput] = useState("");
   const [correctPin, setCorrectPin] = useState(null);
-  const [pinError, setPinError] = useState("");
   const [chatPairKey, setChatPairKey] = useState(null);
   
   const [chatPairData, setChatPairData] = useState(null);
