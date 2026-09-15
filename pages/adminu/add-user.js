@@ -15,8 +15,8 @@ export default function AddUserPage() {
   const [lockUserB, setLockUserB] = useState(false);
   
   // PIN state
-  const [pinA, setPinA] = useState("");
-  const [pinB, setPinB] = useState("");
+   const [pinUserA, setPinUserA] = useState("");
+  const [pinUserB, setPinUserB] = useState("");
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinForUser, setPinForUser] = useState("");
   const [tempPinA, setTempPinA] = useState("");
