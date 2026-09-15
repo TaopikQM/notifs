@@ -12,13 +12,21 @@ export default function AddUserPage() {
 
   const checkUserExists = async (userId) => {
     const cleanId = String(userId).trim().toLowerCase();
-    if (!cleanId) return { id: cleanId, exists: false };
+    if (!cleanId) {
+      console.log(`[DEBUG] User ID kosong: ${userId}`);
+      return { id: cleanId, exists: false };
+    }
 
     try {
-      const snapshot = await get(ref(database, `users/${cleanId}`));
+      const userRef = ref(database, `users/${cleanId}`);
+      console.log(`[DEBUG] Checking user: ${cleanId}, path: users/${cleanId}`);
+      
+      const snapshot = await get(userRef);
+      console.log(`[DEBUG] Result for ${cleanId}:`, snapshot.exists() ? "FOUND" : "NOT FOUND");
+      
       return { id: cleanId, exists: snapshot.exists() };
     } catch (err) {
-      console.error("Error checking user:", err);
+      console.error("[DEBUG] Error checking user:", err);
       return { id: cleanId, exists: false };
     }
   };
@@ -30,6 +38,8 @@ export default function AddUserPage() {
 
     const cleanA = userA.trim().toLowerCase();
     const cleanB = userB.trim().toLowerCase();
+
+    console.log(`[DEBUG] Validating: A=${cleanA}, B=${cleanB}`);
 
     if (!cleanA || !cleanB) {
       setError("Mohon isi kedua nama pengguna.");
@@ -49,20 +59,26 @@ export default function AddUserPage() {
         checkUserExists(cleanB),
       ]);
 
+      console.log("[DEBUG] Result A:", resultA);
+      console.log("[DEBUG] Result B:", resultB);
+
       setCheckResult({ userA: resultA, userB: resultB });
 
       if (!resultA.exists) {
-        setError(`Pengguna "${cleanA}" belum terdaftar di database.`);
+        setError(`Pengguna "${cleanA}" belum terdaftar di database.\n\n⚠️ Pastikan data user sudah ada di Firebase Realtime Database (collection: users/${cleanA})`);
         return;
       }
 
       if (!resultB.exists) {
-        setError(`Pengguna "${cleanB}" belum terdaftar di database.`);
+        setError(`Pengguna "${cleanB}" belum terdaftar di database.\n\n⚠️ Pastikan data user sudah ada di Firebase Realtime Database (collection: users/${cleanB})`);
         return;
       }
+
+      setError("");
+      setSuccess(`✅ Validasi berhasil! User A: ${cleanA}, User B: ${cleanB}`);
     } catch (err) {
-      setError("Gagal memeriksa pengguna ke database.");
-      console.error(err);
+      console.error("[DEBUG] Validation error:", err);
+      setError("Gagal memeriksa pengguna ke database.\n\n⚠️ Cek console browser untuk detail error.");
     } finally {
       setChecking(false);
     }
@@ -94,6 +110,7 @@ export default function AddUserPage() {
     setLoading(true);
 
     try {
+      console.log("[DEBUG] Submitting to API...");
       const response = await fetch("/api/add-chat-pair", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -105,6 +122,7 @@ export default function AddUserPage() {
       });
 
       const data = await response.json();
+      console.log("[DEBUG] API Response:", data);
 
       if (!response.ok) {
         throw new Error(data.message || "Gagal menyimpan pasangan chat.");
@@ -115,6 +133,7 @@ export default function AddUserPage() {
       setUserB("");
       setCheckResult(null);
     } catch (err) {
+      console.error("[DEBUG] Submit error:", err);
       setError(err.message || "Terjadi kesalahan saat menyimpan.");
     } finally {
       setLoading(false);
@@ -125,10 +144,22 @@ export default function AddUserPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 px-4 py-10">
       <div className="mx-auto w-full max-w-xl">
         <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl backdrop-blur">
-          <h1 className="mb-6 text-2xl font-bold">Tambah Pair Chat</h1>
+          <div className="mb-6 flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600/20 text-indigo-300">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m6-6H6" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Admin Add Chat Pair</h1>
+              <p className="mt-1 text-sm text-slate-400">
+                Sekali tambah, dua arah aktif: <span className="text-indigo-300">userA ↔ userB</span>
+              </p>
+            </div>
+          </div>
 
           {error && (
-            <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+            <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200 whitespace-pre-line">
               {error}
             </div>
           )}
@@ -136,6 +167,26 @@ export default function AddUserPage() {
           {success && (
             <div className="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">
               {success}
+            </div>
+          )}
+
+          {checkResult && (
+            <div className="mb-4 rounded-xl border border-slate-700 bg-slate-800/60 p-4 text-sm">
+              <p className="mb-2 font-semibold text-slate-200">Hasil Validasi</p>
+              <div className="space-y-1">
+                <p>
+                  <span className="text-slate-400">User A:</span>{" "}
+                  <span className={checkResult.userA.exists ? "text-emerald-300" : "text-red-300"}>
+                    {checkResult.userA.id} {checkResult.userA.exists ? "✓ tersedia" : "✗ tidak ada"}
+                  </span>
+                </p>
+                <p>
+                  <span className="text-slate-400">User B:</span>{" "}
+                  <span className={checkResult.userB.exists ? "text-emerald-300" : "text-red-300"}>
+                    {checkResult.userB.id} {checkResult.userB.exists ? "✓ tersedia" : "✗ tidak ada"}
+                  </span>
+                </p>
+              </div>
             </div>
           )}
 
@@ -147,9 +198,9 @@ export default function AddUserPage() {
               <input
                 value={userA}
                 onChange={(e) => setUserA(e.target.value)}
-                placeholder="contoh: user1"
+                placeholder="contoh: user12"
                 disabled={loading || checking}
-                className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-slate-100 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+                className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-60"
               />
             </div>
 
@@ -162,7 +213,7 @@ export default function AddUserPage() {
                 onChange={(e) => setUserB(e.target.value)}
                 placeholder="contoh: user2"
                 disabled={loading || checking}
-                className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-slate-100 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+                className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-60"
               />
             </div>
 
@@ -171,26 +222,36 @@ export default function AddUserPage() {
                 type="button"
                 onClick={validateUsers}
                 disabled={loading || checking}
-                className="flex-1 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 font-semibold text-amber-200 hover:bg-amber-500/20 disabled:opacity-60"
+                className="flex-1 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 font-semibold text-amber-200 transition hover:bg-amber-500/20 disabled:opacity-60"
               >
-                {checking ? "Memeriksa..." : "Validasi"}
+                {checking ? "Memeriksa..." : "Validasi User"}
               </button>
 
               <button
                 type="submit"
                 disabled={loading || checking}
-                className="flex-1 rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
+                className="flex-1 rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60"
               >
-                {loading ? "Menyimpan..." : "Simpan"}
+                {loading ? "Menyimpan..." : "Simpan Pair"}
               </button>
             </div>
           </form>
+
+          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-950/50 p-4 text-xs text-slate-400">
+            <p className="font-semibold text-slate-300">Format Data Tersimpan</p>
+            <ul className="mt-2 space-y-1 list-disc list-inside">
+              <li>userA / userB</li>
+              <li>createdAt WIB (hari, tanggal, jam, menit, detik)</li>
+              <li>createdBy: admin</li>
+              <li>status: active</li>
+              <li>directions dua arah otomatis</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
 // "use client";
 // import { useState } from "react";
 // import { ref, get, database } from "../../lib/firebase";
