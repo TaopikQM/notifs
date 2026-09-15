@@ -11,6 +11,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [otherUser, setOtherUser] = useState(null);
   const [sending, setSending] = useState(false);
+  const [otherUserStatus, setOtherUserStatus] = useState(null);
   const messagesEndRef = useRef(null);
 
   // Auto scroll ke bawah
@@ -22,6 +23,51 @@ export default function ChatPage() {
     scrollToBottom();
   }, [messages]);
 
+  // Set status online saat halaman dibuka
+  useEffect(() => {
+    if (!userId) return;
+
+    const setStatusOnline = async () => {
+      try {
+        await fetch("/api/update-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: userId,
+            status: "online",
+          }),
+        });
+      } catch (err) {
+        console.error("Error setting online status:", err);
+      }
+    };
+
+    setStatusOnline();
+
+    // Set status offline saat halaman ditutup
+    const handleBeforeUnload = async () => {
+      try {
+        await fetch("/api/update-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: userId,
+            status: "offline",
+          }),
+        });
+      } catch (err) {
+        console.error("Error setting offline status:", err);
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      handleBeforeUnload(); // Set offline saat unmount
+    };
+  }, [userId]);
+  
   // Cari partner chat user
   useEffect(() => {
     if (!userId) return;
@@ -137,9 +183,30 @@ export default function ChatPage() {
           <div>
             <h1 className="text-xl font-bold">{userId}</h1>
             <p className="text-sm text-slate-400">Chat dengan: {otherUser}</p>
+             {otherUserStatus && (
+                <>
+                  <span className="text-slate-600">•</span>
+                  {otherUserStatus.status === "online" ? (
+                    <span className="flex items-center gap-1 text-green-400">
+                      <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
+                      Online
+                    </span>
+                  ) : (
+                    <span className="text-slate-500">
+                      {formatLastSeen(otherUserStatus.lastSeenTimestamp)}
+                    </span>
+                  )}
+                </>
+              )}
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600">
-            {userId.charAt(0).toUpperCase()}
+          <div className="relative">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600">
+              {userId.charAt(0).toUpperCase()}
+            </div>
+               {/* Online indicator di avatar */}
+              {otherUserStatus?.status === "online" && (
+                <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-slate-900 bg-green-400"></div>
+              )}
           </div>
         </div>
       </div>
