@@ -338,12 +338,46 @@ export default function AdminDashboard() {
       alert("Gagal mengubah status");
     }
   };
+
+  // --- HANDLE STATUS TOGGLE PER DIRECTION ---
+  const handleDirectionStatusToggle = async (id, directionKey) => {
+    const user = users.find(u => u.id === id);
+    if (!user || !user.directions || !user.directions[directionKey]) return;
+
+    const currentDirection = user.directions[directionKey];
+    const newStatus = currentDirection.status === "active" ? "inactive" : "active";
+
+    try {
+      const oldData = { ...user };
+      const updatedUser = {
+        ...user,
+        directions: {
+          ...user.directions,
+          [directionKey]: {
+            ...currentDirection,
+            status: newStatus,
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      };
+
+      await set(ref(database, `chat-pairs/${id}`), updatedUser);
+      await saveToLog(id, oldData, updatedUser);
+
+      console.log(`✅ Status ${directionKey} berhasil diubah menjadi ${newStatus}`);
+    } catch (err) {
+      console.error("Error updating direction status:", err);
+      alert("Gagal mengubah status direction");
+    }
+  };
+
+
     // --- HANDLE STATUS TOGGLE USER A ---
   const handleStatusToggleUserA = async (id) => {
     const user = users.find(u => u.id === id);
     if (!user) return;
 
-    const newStatus = user.statusUserA === "active" ? "inactive" : "active";
+    const newStatus = user.directions.user1_to_user2.status === "active" ? "inactive" : "active";
 
     try {
       const oldData = { ...user };
@@ -364,7 +398,7 @@ export default function AdminDashboard() {
     const user = users.find(u => u.id === id);
     if (!user) return;
 
-    const newStatus = user.statusUserB === "active" ? "inactive" : "active";
+    const newStatus = user..directions.user2_to_user1.status === "active" ? "inactive" : "active";
 
     try {
       const oldData = { ...user };
@@ -592,6 +626,43 @@ export default function AdminDashboard() {
                               <div className="border-t border-slate-700 pt-4">
                                 <span className="text-xs text-slate-500">Directions:</span>
                                 {renderNestedObject(user.directions)}
+                              </div>
+                              {/* Directions */}
+                              <div className="border-t border-slate-700 pt-4">
+                                <h4 className="text-sm font-semibold text-slate-300 mb-3">🔄 Directions (Chat Routes)</h4>
+                                <div className="space-y-3">
+                                  {user.directions && Object.entries(user.directions).map(([dirKey, dirValue]) => (
+                                    <div key={dirKey} className="border border-slate-700 rounded-lg p-3 bg-slate-950/50">
+                                      <div className="flex items-center justify-between mb-2">
+                                        <span className="text-sm font-semibold text-indigo-400">{dirKey}</span>
+                                        <button
+                                          onClick={() => handleDirectionStatusToggle(user.id, dirKey)}
+                                          className={`px-3 py-1 rounded-md text-xs font-semibold transition shadow-lg ${
+                                            dirValue.status === "active"
+                                              ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/50"
+                                              : "bg-red-600 text-white hover:bg-red-700 shadow-red-600/50"
+                                          }`}
+                                        >
+                                          {dirValue.status === "active" ? "✅ Active" : "❌ Inactive"}
+                                        </button>
+                                      </div>
+                                      <div className="space-y-1 text-xs">
+                                        <div className="flex justify-between">
+                                          <span className="text-slate-500">Sender:</span>
+                                          <span className="text-slate-300">{dirValue.sender}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-slate-500">Receiver:</span>
+                                          <span className="text-slate-300">{dirValue.receiver}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-slate-500">Updated At:</span>
+                                          <span className="text-slate-300">{dirValue.updatedAt}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
 
                               {/* Lock Settings */}
