@@ -20,9 +20,9 @@ export default function ChatPage() {
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
   
-  // const [isLocked, setIsLocked] = useState(false);
-  const isLocked = pairData.lockUserA && pairData.pins.userA === userId;
-const isLockedB = pairData.lockUserB && pairData.pins.userB === userId;
+  const [isLocked, setIsLocked] = useState(false);
+//   const isLocked = pairData.lockUserA && pairData.pins.userA === userId;
+// const isLockedB = pairData.lockUserB && pairData.pins.userB === userId;
   const [correctPin, setCorrectPin] = useState(null);
   const [chatPairKey, setChatPairKey] = useState(null);
   
