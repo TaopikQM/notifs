@@ -338,30 +338,45 @@ export default function AdminDashboard() {
       alert("Gagal mengubah status");
     }
   };
-  // --- HANDLE USER STATUS TOGGLE (Terpisah A & B) ---
-  const handleUserStatusToggle = async (id, userType) => {
+    // --- HANDLE STATUS TOGGLE USER A ---
+  const handleStatusToggleUserA = async (id) => {
     const user = users.find(u => u.id === id);
     if (!user) return;
 
-    // Tentukan field yang akan diubah
-    const statusField = userType === "userA" ? "statusUserA" : "statusUserB";
-    const currentStatus = user[statusField] || "active";
-    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    const newStatus = user.statusUserA === "active" ? "inactive" : "active";
 
     try {
       const oldData = { ...user };
-      const updatedUser = { ...user, [statusField]: newStatus };
+      const updatedUser = { ...user, statusUserA: newStatus };
 
-      // Update ke Firebase
       await set(ref(database, `chat-pairs/${id}`), updatedUser);
-
-      // Simpan ke log
       await saveToLog(id, oldData, updatedUser);
 
-      console.log(`✅ Status ${userType} (${id}) berhasil diubah menjadi ${newStatus}`);
+      console.log(`✅ Status User A (${user.userA}) berhasil diubah menjadi ${newStatus}`);
     } catch (err) {
       console.error("Error updating status:", err);
-      alert("Gagal mengubah status");
+      alert("Gagal mengubah status User A");
+    }
+  };
+
+  // --- HANDLE STATUS TOGGLE USER B ---
+  const handleStatusToggleUserB = async (id) => {
+    const user = users.find(u => u.id === id);
+    if (!user) return;
+
+    const newStatus = user.statusUserB === "active" ? "inactive" : "active";
+
+    try {
+      const oldData = { ...user };
+      const updatedUser = { ...user, statusUserB: newStatus };
+
+      await set(ref(database, `chat-pairs/${id}`), updatedUser);
+      await saveToLog(id, oldData, updatedUser);
+
+      console.log(`✅ Status User B (${user.userB}) berhasil diubah menjadi ${newStatus}`);
+    } catch (err) {
+      console.error("Error updating status:", err);
+      alert("Gagal mengubah status User B");
     }
   };
 
@@ -513,12 +528,12 @@ export default function AdminDashboard() {
                                     </div>
                                   </div>*/}
 
-                                  <div className="space-y-3">
+                                                                   <div className="space-y-3">
                                     <div>
                                       <span className="text-xs text-slate-500">Status User A ({user.userA}):</span>
                                       <div className="mt-1">
                                         <button
-                                          onClick={() => handleUserStatusToggle(user.id, "userA")}
+                                          onClick={() => handleStatusToggleUserA(user.id)}
                                           className={`px-6 py-2 rounded-lg text-sm font-semibold transition shadow-lg ${
                                             user.statusUserA === "active"
                                               ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/50"
@@ -534,7 +549,7 @@ export default function AdminDashboard() {
                                       <span className="text-xs text-slate-500">Status User B ({user.userB}):</span>
                                       <div className="mt-1">
                                         <button
-                                          onClick={() => handleUserStatusToggle(user.id, "userB")}
+                                          onClick={() => handleStatusToggleUserB(user.id)}
                                           className={`px-6 py-2 rounded-lg text-sm font-semibold transition shadow-lg ${
                                             user.statusUserB === "active"
                                               ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/50"
