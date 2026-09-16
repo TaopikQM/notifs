@@ -641,12 +641,12 @@ useEffect(() => {
     };
     useEffect(() => {
       return () => {
-        setAttemptCount(0);
-        setIsBlocked(false);
-        setLockoutTime(null);
-        setCountdown(60);
-        setPinInput("");
-        setPinError("");
+        // setAttemptCount(0);
+        // setIsBlocked(false);
+        // setLockoutTime(null);
+        // setCountdown(60);
+        // setPinInput("");
+        // setPinError("");
       };
     }, []);
 
