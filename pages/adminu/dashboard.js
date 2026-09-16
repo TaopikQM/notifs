@@ -315,7 +315,7 @@ export default function AdminDashboard() {
   };
 
     // --- HANDLE STATUS TOGGLE (Satu Tombol) ---
-  const handleStatusToggle = async (id) => {
+  const handleStatusToggleU = async (id) => {
     const user = users.find(u => u.id === id);
     if (!user) return;
 
@@ -333,6 +333,32 @@ export default function AdminDashboard() {
       await saveToLog(id, oldData, updatedUser);
 
       console.log(`✅ Status ${id} berhasil diubah menjadi ${newStatus}`);
+    } catch (err) {
+      console.error("Error updating status:", err);
+      alert("Gagal mengubah status");
+    }
+  };
+  // --- HANDLE USER STATUS TOGGLE (Terpisah A & B) ---
+  const handleUserStatusToggle = async (id, userType) => {
+    const user = users.find(u => u.id === id);
+    if (!user) return;
+
+    // Tentukan field yang akan diubah
+    const statusField = userType === "userA" ? "statusUserA" : "statusUserB";
+    const currentStatus = user[statusField] || "active";
+    const newStatus = currentStatus === "active" ? "inactive" : "active";
+
+    try {
+      const oldData = { ...user };
+      const updatedUser = { ...user, [statusField]: newStatus };
+
+      // Update ke Firebase
+      await set(ref(database, `chat-pairs/${id}`), updatedUser);
+
+      // Simpan ke log
+      await saveToLog(id, oldData, updatedUser);
+
+      console.log(`✅ Status ${userType} (${id}) berhasil diubah menjadi ${newStatus}`);
     } catch (err) {
       console.error("Error updating status:", err);
       alert("Gagal mengubah status");
@@ -471,7 +497,7 @@ export default function AdminDashboard() {
                                     <span className="text-xs text-slate-500">Created By:</span>
                                     <div>{renderEditableField(user.id, "createdBy", user.createdBy)}</div>
                                   </div>
-                                                                     <div>
+{/*  <div>
                                     <span className="text-xs text-slate-500">Status:</span>
                                     <div className="mt-1">
                                       <button
@@ -484,6 +510,40 @@ export default function AdminDashboard() {
                                       >
                                         {user.status === "active" ? "✅ Active" : "❌ Inactive"}
                                       </button>
+                                    </div>
+                                  </div>*/}
+
+                                  <div className="space-y-3">
+                                    <div>
+                                      <span className="text-xs text-slate-500">Status User A ({user.userA}):</span>
+                                      <div className="mt-1">
+                                        <button
+                                          onClick={() => handleUserStatusToggle(user.id, "userA")}
+                                          className={`px-6 py-2 rounded-lg text-sm font-semibold transition shadow-lg ${
+                                            user.statusUserA === "active"
+                                              ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/50"
+                                              : "bg-red-600 text-white hover:bg-red-700 shadow-red-600/50"
+                                          }`}
+                                        >
+                                          {user.statusUserA === "active" ? "✅ Active" : "❌ Inactive"}
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    <div>
+                                      <span className="text-xs text-slate-500">Status User B ({user.userB}):</span>
+                                      <div className="mt-1">
+                                        <button
+                                          onClick={() => handleUserStatusToggle(user.id, "userB")}
+                                          className={`px-6 py-2 rounded-lg text-sm font-semibold transition shadow-lg ${
+                                            user.statusUserB === "active"
+                                              ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/50"
+                                              : "bg-red-600 text-white hover:bg-red-700 shadow-red-600/50"
+                                          }`}
+                                        >
+                                          {user.statusUserB === "active" ? "✅ Active" : "❌ Inactive"}
+                                        </button>
+                                      </div>
                                     </div>
                                   </div>
 { /* <div>
