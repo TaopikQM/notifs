@@ -83,8 +83,31 @@ useEffect(() => {
 }, [userId, otherUser]);
 
   // Countdown timer saat akses diblokir
+// useEffect(() => {
+//   if (!isBlocked || countdown <= 0) return;
+
+//   const interval = setInterval(() => {
+//     const remaining = getRemainingLockoutTime();
+
+//     if (remaining <= 0) {
+//       // Lockout selesai
+//       setIsBlocked(false);
+//       setCountdown(0);
+//       setPinError("");
+//       setAttemptCount(0);
+//       clearLockout();
+//       clearInterval(interval);
+//     } else {
+//       setCountdown(remaining);
+//     }
+//   }, 1000);
+
+//   return () => clearInterval(interval);
+// }, [isBlocked, countdown]);
+
+  // Countdown timer saat akses diblokir
 useEffect(() => {
-  if (!isBlocked || countdown <= 0) return;
+  if (!isBlocked) return; // Hanya jalan saat isBlocked = true
 
   const interval = setInterval(() => {
     const remaining = getRemainingLockoutTime();
@@ -100,11 +123,10 @@ useEffect(() => {
     } else {
       setCountdown(remaining);
     }
-  }, 1000);
+  }, 1000); // Update setiap 1 detik
 
   return () => clearInterval(interval);
-}, [isBlocked, countdown]);
-
+}, [isBlocked]); // ✓ PERBAIKAN: Tambahkan isBlocked sebagai dependency
   
   
   // Auto scroll ke bawah
@@ -685,7 +707,8 @@ useEffect(() => {
         } else {
           // Kesempatan habis - mulai lockout 1 menit
           setIsBlocked(true);
-          setLockoutTime();
+          // setLockoutTime();
+          saveLockoutTime();
           setCountdown(LOCKOUT_DURATION);
           setPinError(
             `❌ Kesempatan habis! Akses diblokir selama 1 menit.`
