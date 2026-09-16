@@ -743,7 +743,6 @@ useEffect(() => {
 
     return (
       <span className="inline-flex items-center gap-1 text-xs text-red-400">
-       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
            
         <span className="h-2 w-2 rounded-full bg-red-500"></span>
         Terakhir online: {presence.lastSeen}
@@ -775,7 +774,7 @@ const renderStatusIndicatorlg = (presence) => {
 
     return (
       <span className="inline-flex items-center gap-1 text-xs text-red-400">
-       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
            
         <span className="h-2 w-2 rounded-full bg-red-500"></span>
        
