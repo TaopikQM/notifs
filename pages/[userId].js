@@ -550,16 +550,7 @@ export default function ChatPage() {
     );
   }
 
-  if (!otherUser) {
-    return (
-      <div className="flex h-screen flex-col items-center justify-center bg-slate-950 text-white">
-        <p className="mb-4 text-xl">Tidak ada chat partner untuk user: {userId}</p>
-        <a href="/admin/add-user" className="text-blue-400 underline">
-          Buat pair chat baru
-        </a>
-      </div>
-    );
-  }
+  
 // --- PIN Lock Screen (Tampil jika terkunci) ---
   if (showPinModal && chatPairData) {
     return (
@@ -614,6 +605,16 @@ export default function ChatPage() {
             </p>
           </div>
         </div>
+      </div>
+    );
+  }
+if (!otherUser) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center bg-slate-950 text-white">
+        <p className="mb-4 text-xl">Tidak ada chat partner untuk user: {userId}</p>
+        <a href="/admin/add-user" className="text-blue-400 underline">
+          Buat pair chat baru
+        </a>
       </div>
     );
   }
