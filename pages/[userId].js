@@ -34,28 +34,7 @@ export default function ChatPage() {
   const messagesEndRef = useRef(null);
   const heartbeatRef = useRef(null);
 
- // Countdown timer saat akses diblokir
-useEffect(() => {
-  if (!isBlocked || countdown <= 0) return;
-
-  const interval = setInterval(() => {
-    const remaining = getRemainingLockoutTime();
-
-    if (remaining <= 0) {
-      // Lockout selesai
-      setIsBlocked(false);
-      setCountdown(0);
-      setPinError("");
-      setAttemptCount(0);
-      clearLockout();
-      clearInterval(interval);
-    } else {
-      setCountdown(remaining);
-    }
-  }, 1000);
-
-  return () => clearInterval(interval);
-}, [isBlocked, countdown]);
+ 
 
   const LOCKOUT_KEY = "pin_lockout_time";
   const LOCKOUT_DURATION = 60; // 1 menit dalam detik
@@ -103,6 +82,28 @@ useEffect(() => {
   }
 }, [userId, otherUser]);
 
+  // Countdown timer saat akses diblokir
+useEffect(() => {
+  if (!isBlocked || countdown <= 0) return;
+
+  const interval = setInterval(() => {
+    const remaining = getRemainingLockoutTime();
+
+    if (remaining <= 0) {
+      // Lockout selesai
+      setIsBlocked(false);
+      setCountdown(0);
+      setPinError("");
+      setAttemptCount(0);
+      clearLockout();
+      clearInterval(interval);
+    } else {
+      setCountdown(remaining);
+    }
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, [isBlocked, countdown]);
 
   
   
@@ -641,12 +642,14 @@ useEffect(() => {
     };
     useEffect(() => {
       return () => {
-        // setAttemptCount(0);
-        // setIsBlocked(false);
-        // setLockoutTime(null);
+        setAttemptCount(0);
+        setIsBlocked(false);
+        setLockoutTime(null);
         // setCountdown(60);
-        // setPinInput("");
-        // setPinError("");
+        
+          setCountdown(LOCKOUT_DURATION);
+        setPinInput("");
+        setPinError("");
       };
     }, []);
 
@@ -667,6 +670,7 @@ useEffect(() => {
         setPinInput("");
         setAttemptCount(0);
         // setLockoutTime(null);
+        
         setCountdown(0);
         clearLockout();
       } else {
