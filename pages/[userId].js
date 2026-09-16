@@ -20,7 +20,9 @@ export default function ChatPage() {
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
   
-  const [isLocked, setIsLocked] = useState(false);
+  // const [isLocked, setIsLocked] = useState(false);
+  const isLocked = pairData.lockUserA && pairData.pins.userA === userId;
+const isLockedB = pairData.lockUserB && pairData.pins.userB === userId;
   const [correctPin, setCorrectPin] = useState(null);
   const [chatPairKey, setChatPairKey] = useState(null);
   
@@ -198,8 +200,8 @@ export default function ChatPage() {
               setChatPairData(pairData);
 
               // Cek apakah user dilock
-              const isLocked = pairData.lockUserA && pairData.pins.userA === userId;
-              const isLockedB = pairData.lockUserB && pairData.pins.userB === userId;
+              const isLocked = pairData.lockUserA && pairData.pinUserA === userId;
+              const isLockedB = pairData.lockUserB && pairData.pinUserB === userId;
 
               if (isLocked || isLockedB) {
                 setShowPinModal(true);
@@ -228,8 +230,8 @@ export default function ChatPage() {
   const verifyPin = async () => {
     if (!userId || !chatPairData) return;
 
-    const isLockedA = chatPairData.lockUserA && chatPairData.pins.userA === userId;
-    const isLockedB = chatPairData.lockUserB && chatPairData.pins.userB === userId;
+    const isLockedA = chatPairData.lockUserA && chatPairData.pinUserA === userId;
+    const isLockedB = chatPairData.lockUserB && chatPairData.pinUserB === userId;
 
     if (!isLockedA && !isLockedB) {
       setShowPinModal(false);
@@ -246,7 +248,7 @@ export default function ChatPage() {
       return;
     }
 
-    const correctPin = isLockedA ? chatPairData.pins.userA : chatPairData.pins.userB;
+    const correctPin = isLockedA ? chatPairData.pinUserA : chatPairData.pinUserB;
 
     if (pinInput === correctPin) {
       setShowPinModal(false);
