@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { ref, get, set, remove, database, onValue, push } from "../../lib/firebase";
 
+import Link from "next/link";
+
+
 export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -493,6 +496,26 @@ export default function AdminDashboard() {
             </svg>
           </div>
         </div>
+
+            {/* Tombol di bawah card */}
+            <div className="mt-4 mb-8 flex justify-center">
+              <Link
+                href="/adminu/add-user"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-700 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="h-4 w-4"
+                  aria-hidden="true"
+                >
+                  <path d="M10.707 2.293a1 1 0 0 0-1.414 0l-7 7A1 1 0 0 0 3 11h1v5a2 2 0 0 0 2 2h2v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4h2a2 2 0 0 0 2-2v-5h1a1 1 0 0 0 .707-1.707l-7-7Z" />
+                </svg>
+                Kembali ke add user
+              </Link>
+            </div>
+
 
         {/* Table */}
         <div className="rounded-2xl border border-slate-800 bg-slate-900/80 shadow-2xl overflow-hidden">
