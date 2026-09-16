@@ -398,7 +398,7 @@ export default function AdminDashboard() {
     const user = users.find(u => u.id === id);
     if (!user) return;
 
-    const newStatus = user..directions.user2_to_user1.status === "active" ? "inactive" : "active";
+    const newStatus = user.directions.user2_to_user1.status === "active" ? "inactive" : "active";
 
     try {
       const oldData = { ...user };
