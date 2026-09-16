@@ -1168,14 +1168,14 @@ Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-fl
                       minute: '2-digit',
                       second: '2-digit',
                       hour12: false
-                    }).replace(/\//g, '-')}
+                    }).replace(/\//g, '-')} {msg.sender === userId &&
+                      (msg.isRead ? (
+                        <span className="text-[10px] text-emerald-300">✓✓</span>
+                      ) : (
+                        <span className="text-[10px] text-slate-300">✓</span>
+                    ))}
                   </p>
-                   {msg.sender === userId &&
-              (msg.isRead ? (
-                <span className="text-[10px] text-emerald-300">✓✓</span>
-              ) : (
-                <span className="text-[10px] text-slate-300">✓</span>
-              ))}
+                   
               </div>
             </div>
           ))
