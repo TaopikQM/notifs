@@ -27,37 +27,84 @@ export default function ChatPage() {
   const [maxAttempts] = useState(4);
   const [isBlocked, setIsBlocked] = useState(false); // Akses diblokir
   const [lockoutTime, setLockoutTime] = useState(null); // Waktu blokir dimulai
-  const [countdown, setCountdown] = useState(60); // Countdown dalam detik
+  const [countdown, setCountdown] = useState(0); // Countdown dalam detik
  
   const [chatPairData, setChatPairData] = useState(null);
   const [otherUserStatus, setOtherUserStatus] = useState(null);//ini gagal offline
   const messagesEndRef = useRef(null);
   const heartbeatRef = useRef(null);
 
-  // Countdown timer saat akses diblokir
-  useEffect(() => {
-    if (!isBlocked || !lockoutTime) return;
+ // Countdown timer saat akses diblokir
+useEffect(() => {
+  if (!isBlocked || countdown <= 0) return;
+
+  const interval = setInterval(() => {
+    const remaining = getRemainingLockoutTime();
+
+    if (remaining <= 0) {
+      // Lockout selesai
+      setIsBlocked(false);
+      setCountdown(0);
+      setPinError("");
+      setAttemptCount(0);
+      clearLockout();
+      clearInterval(interval);
+    } else {
+      setCountdown(remaining);
+    }
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, [isBlocked, countdown]);
+
+  const LOCKOUT_KEY = "pin_lockout_time";
+  const LOCKOUT_DURATION = 60; // 1 menit dalam detik
   
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const elapsed = Math.floor((now - lockoutTime) / 1000);
-      const remaining = 60 - elapsed;
+  const saveLockoutTime = () => {
+    const now = Date.now();
+    localStorage.setItem(LOCKOUT_KEY, now.toString());
+  };
   
-      if (remaining <= 0) {
-        // Lockout selesai
-        setIsBlocked(false);
-        setLockoutTime(null);
-        setAttemptCount(0);
-        setPinError("");
-        setCountdown(60);
-        clearInterval(interval);
-      } else {
-        setCountdown(remaining);
-      }
-    }, 1000);
+  const getLockoutTime = () => {
+    const saved = localStorage.getItem(LOCKOUT_KEY);
+    return saved ? parseInt(saved) : null;
+  };
   
-    return () => clearInterval(interval);
-  }, [isBlocked, lockoutTime]);
+  const getRemainingLockoutTime = () => {
+    const lockoutTime = getLockoutTime();
+    if (!lockoutTime) return 0;
+  
+    const now = Date.now();
+    const elapsed = Math.floor((now - lockoutTime) / 1000);
+    const remaining = LOCKOUT_DURATION - elapsed;
+  
+    return remaining > 0 ? remaining : 0;
+  };
+  
+  const clearLockout = () => {
+    localStorage.removeItem(LOCKOUT_KEY);
+  };  
+
+  // Cek apakah masih dalam periode lockout saat halaman dibuka
+useEffect(() => {
+  if (!userId || !otherUser) return;
+
+  const remaining = getRemainingLockoutTime();
+  
+  if (remaining > 0) {
+    // Masih dalam lockout
+    setIsBlocked(true);
+    setCountdown(remaining);
+  } else {
+    // Lockout selesai
+    setIsBlocked(false);
+    setCountdown(0);
+    clearLockout();
+  }
+}, [userId, otherUser]);
+
+
+  
   
   // Auto scroll ke bawah
   const scrollToBottom = () => {
@@ -558,89 +605,92 @@ useEffect(() => {
   };
 
 
-const isCurrentUserLocked = (data, currentUserId) => {
-  if (currentUserId === data.userA) {
-    return data.lockUserA === true;
-  } else if (currentUserId === data.userB) {
-    return data.lockUserB === true;
-  }
-  return false;
-};
-
-const getCurrentUserPin = (data, currentUserId) => {
-  if (currentUserId === data.userA) {
-    return data.pinUserA || null;
-  } else if (currentUserId === data.userB) {
-    return data.pinUserB || null;
-  }
-  return null;
-};
-
-const handlePinSubmitU = (e) => {
-  e.preventDefault();
-  
-  if (!chatPairData) return;
-
-  const correctPin = getCurrentUserPin(chatPairData, userId);
-
-  if (pinInput === correctPin) {
-    setPinVerified(true);
-    setPinError("");
-    setPinInput("");
-  } else {
-    setPinError("PIN salah!");
-    setPinInput("");
-  }
-};
-useEffect(() => {
-  return () => {
-    setAttemptCount(0);
-    setIsBlocked(false);
-    setLockoutTime(null);
-    setCountdown(60);
-    setPinInput("");
-    setPinError("");
-  };
-}, []);
-    const handlePinSubmit = (e) => {
-    e.preventDefault();
-  
-    if (!chatPairData || isBlocked) return;
-  
-    const correctPin = getCurrentUserPin(chatPairData, userId);
-    const newAttemptCount = attemptCount + 1;
-    const remainingAttempts = maxAttempts - newAttemptCount;
-  
-    if (pinInput === correctPin) {
-      // ✓ PIN BENAR
-      setPinVerified(true);
-      setPinError("");
-      setPinInput("");
-      setAttemptCount(0);
-      setLockoutTime(null);
-      setCountdown(60);
-    } else {
-      // ✗ PIN SALAH
-      setAttemptCount(newAttemptCount);
-  
-      if (remainingAttempts > 0) {
-        // Masih ada kesempatan
-        setPinError(
-          `❌ PIN salah! Sisa ${remainingAttempts} kesempatan lagi.`
-        );
-      } else {
-        // Kesempatan habis - mulai lockout 1 menit
-        setIsBlocked(true);
-        setLockoutTime(Date.now());
-        setCountdown(60);
-        setPinError(
-          `❌ Kesempatan habis! Akses diblokir selama 1 menit.`
-        );
+    const isCurrentUserLocked = (data, currentUserId) => {
+      if (currentUserId === data.userA) {
+        return data.lockUserA === true;
+      } else if (currentUserId === data.userB) {
+        return data.lockUserB === true;
       }
+      return false;
+    };
+    
+    const getCurrentUserPin = (data, currentUserId) => {
+      if (currentUserId === data.userA) {
+        return data.pinUserA || null;
+      } else if (currentUserId === data.userB) {
+        return data.pinUserB || null;
+      }
+      return null;
+    };
+    
+    const handlePinSubmitU = (e) => {
+      e.preventDefault();
+      
+      if (!chatPairData) return;
+    
+      const correctPin = getCurrentUserPin(chatPairData, userId);
+    
+      if (pinInput === correctPin) {
+        setPinVerified(true);
+        setPinError("");
+        setPinInput("");
+      } else {
+        setPinError("PIN salah!");
+        setPinInput("");
+      }
+    };
+    useEffect(() => {
+      return () => {
+        setAttemptCount(0);
+        setIsBlocked(false);
+        setLockoutTime(null);
+        setCountdown(60);
+        setPinInput("");
+        setPinError("");
+      };
+    }, []);
+
   
-      setPinInput("");
-    }
-  };
+    const handlePinSubmit = (e) => {
+      e.preventDefault();
+    
+      if (!chatPairData || isBlocked) return;
+    
+      const correctPin = getCurrentUserPin(chatPairData, userId);
+      const newAttemptCount = attemptCount + 1;
+      const remainingAttempts = maxAttempts - newAttemptCount;
+    
+      if (pinInput === correctPin) {
+        // ✓ PIN BENAR
+        setPinVerified(true);
+        setPinError("");
+        setPinInput("");
+        setAttemptCount(0);
+        // setLockoutTime(null);
+        setCountdown(0);
+        clearLockout();
+      } else {
+        // ✗ PIN SALAH
+        setAttemptCount(newAttemptCount);
+    
+        if (remainingAttempts > 0) {
+          // Masih ada kesempatan
+          setPinError(
+            `❌ PIN salah! Sisa ${remainingAttempts} kesempatan lagi.`
+          );
+        } else {
+          // Kesempatan habis - mulai lockout 1 menit
+          setIsBlocked(true);
+          setLockoutTime();
+          setCountdown(LOCKOUT_DURATION);
+          setPinError(
+            `❌ Kesempatan habis! Akses diblokir selama 1 menit.`
+          );
+        }
+    
+        setPinInput("");
+      }
+    };
   
    const renderStatusIndicator = (presence) => {
     if (!presence) {
@@ -790,7 +840,7 @@ if (isLocked && !pinVerified) {
         </div>
 
         {/* Countdown Timer (Jika Diblokir) */}
-        {isBlocked && (
+        {isBlocked && countdown > 0 &&(
           <div className="mb-6 rounded-lg border border-red-500/50 bg-red-500/10 p-4 text-center">
             <p className="mb-2 text-sm text-red-400">⏱️ Akses Diblokir</p>
             <p className="text-4xl font-bold text-red-500">{countdown}s</p>
