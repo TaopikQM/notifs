@@ -1170,12 +1170,12 @@ Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-fl
                       hour12: false
                     }).replace(/\//g, '-')}
                   </p>
-                     {isMe &&
-                        (msg.isRead ? (
-                          <span className="text-[10px] text-emerald-300">✓✓</span>
-                        ) : (
-                          <span className="text-[10px] text-slate-300">✓</span>
-                        ))}
+                   {msg.sender === userId &&
+              (msg.isRead ? (
+                <span className="text-[10px] text-emerald-300">✓✓</span>
+              ) : (
+                <span className="text-[10px] text-slate-300">✓</span>
+              ))}
               </div>
             </div>
           ))
