@@ -425,30 +425,30 @@ export default function ChatPage() {
   // };
   
   // Cari partner chat user
-  useEffect(() => {
-    if (!userId) return;
+  // useEffect(() => {
+  //   if (!userId) return;
 
-    const findPartner = async () => {
-      try {
-        const indexRef = ref(database, `user-chat-index/${userId}`);
-        onValue(indexRef, (snapshot) => {
-          if (snapshot.exists()) {
-            const chatPairs = snapshot.val();
-            const partner = Object.keys(chatPairs)[0]; // Ambil partner pertama
-            setOtherUser(partner);
-          } else {
-            setOtherUser(null);
-          }
-          setLoading(false);
-        });
-      } catch (err) {
-        console.error("Error finding partner:", err);
-        setLoading(false);
-      }
-    };
+  //   const findPartner = async () => {
+  //     try {
+  //       const indexRef = ref(database, `user-chat-index/${userId}`);
+  //       onValue(indexRef, (snapshot) => {
+  //         if (snapshot.exists()) {
+  //           const chatPairs = snapshot.val();
+  //           const partner = Object.keys(chatPairs)[0]; // Ambil partner pertama
+  //           setOtherUser(partner);
+  //         } else {
+  //           setOtherUser(null);
+  //         }
+  //         setLoading(false);
+  //       });
+  //     } catch (err) {
+  //       console.error("Error finding partner:", err);
+  //       setLoading(false);
+  //     }
+  //   };
 
-    findPartner();
-  }, [userId]);
+  //   findPartner();
+  // }, [userId]);
 
   // Real-time listen pesan
   useEffect(() => {
