@@ -28,7 +28,7 @@ export default function AdminDashboard() {
           ...data[key],
         }));
         setUsers(usersList);
-        console.log(userList);
+        console.log(usersList);
       } else {
         setUsers([]);
       }
