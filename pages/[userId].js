@@ -18,9 +18,10 @@ export default function ChatPage() {
   const [currentUserPresence, setCurrentUserPresence] = useState(null);
   
   const [showPinModal, setShowPinModal] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
   const [pinInput, setPinInput] = useState("");
+  const [pinVerified, setPinVerified] = useState(false);
   const [pinError, setPinError] = useState("");
-  const [isChatUnlocked, setIsChatUnlocked] = useState(false);
  
   const [chatPairData, setChatPairData] = useState(null);
   const [otherUserStatus, setOtherUserStatus] = useState(null);//ini gagal offline
@@ -445,7 +446,33 @@ export default function ChatPage() {
     findPartner();
   }, [userId]);
 
-  Real-time listen pesan
+  // Fetch chat pair data untuk cek lock & pin
+useEffect(() => {
+  if (!userId || !otherUser) return;
+
+  const chatPairKey = getChatPairKey(userId, otherUser);
+  const chatPairRef = ref(database, `chat-pairs/${chatPairKey}`);
+
+  const unsubscribe = onValue(chatPairRef, (snapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      setChatPairData(data);
+
+      // Cek apakah user saat ini terkunci
+      const locked = isCurrentUserLocked(data, userId);
+      setIsLocked(locked);
+      
+      // Jika tidak terkunci, langsung verifikasi
+      if (!locked) {
+        setPinVerified(true);
+      }
+    }
+  });
+
+  return () => off(chatPairRef, "value", unsubscribe);
+}, [userId, otherUser]);
+
+  // Real-time listen pesan
   useEffect(() => {
     if (!userId || !otherUser) return;
 
@@ -499,6 +526,42 @@ export default function ChatPage() {
     }
   };
 
+
+const isCurrentUserLocked = (data, currentUserId) => {
+  if (currentUserId === data.userA) {
+    return data.lockUserA === true;
+  } else if (currentUserId === data.userB) {
+    return data.lockUserB === true;
+  }
+  return false;
+};
+
+const getCurrentUserPin = (data, currentUserId) => {
+  if (currentUserId === data.userA) {
+    return data.pinUserA || null;
+  } else if (currentUserId === data.userB) {
+    return data.pinUserB || null;
+  }
+  return null;
+};
+
+const handlePinSubmit = (e) => {
+  e.preventDefault();
+  
+  if (!chatPairData) return;
+
+  const correctPin = getCurrentUserPin(chatPairData, userId);
+
+  if (pinInput === correctPin) {
+    setPinVerified(true);
+    setPinError("");
+    setPinInput("");
+  } else {
+    setPinError("PIN salah!");
+    setPinInput("");
+  }
+};
+  
    const renderStatusIndicator = (presence) => {
     if (!presence) {
       return (
@@ -529,13 +592,21 @@ export default function ChatPage() {
     );
   };
 
-  if (!userId) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-slate-950 text-white">
-        <p>Loading...</p>
-      </div>
-    );
-  }
+  // if (!userId) {
+  //   return (
+  //     <div className="flex h-screen items-center justify-center bg-slate-950 text-white">
+  //       <p>Loading...</p>
+  //     </div>
+  //   );
+  // }
+
+if (!userId || !chatPairData) {
+  return (
+    <div className="flex h-screen items-center justify-center bg-slate-950 text-white">
+      <p>Loading...</p>
+    </div>
+  );
+}
 
   if (loading) {
     return (
@@ -603,6 +674,47 @@ export default function ChatPage() {
 //       </div>
 //     );
 //   }
+
+
+// Tambahkan ini sebelum return JSX utama
+if (isLocked && !pinVerified) {
+  return (
+    <div className="flex h-screen items-center justify-center bg-slate-950">
+      <div className="w-96 rounded-lg border border-slate-700 bg-slate-900 p-6 shadow-xl">
+        <h2 className="mb-2 text-2xl font-bold text-white">Chat Terkunci</h2>
+        <p className="mb-6 text-slate-400">Masukkan PIN untuk akses chat</p>
+
+        <form onSubmit={handlePinSubmit} className="space-y-4">
+          <div>
+            <input
+              type="password"
+              value={pinInput}
+              onChange={(e) => setPinInput(e.target.value)}
+              placeholder="Masukkan PIN..."
+              maxLength="6"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-2 text-center text-2xl tracking-widest text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+            />
+            {pinError && (
+              <p className="mt-2 text-sm text-red-400">{pinError}</p>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={!pinInput.trim()}
+            className="w-full rounded-lg bg-indigo-600 py-2 font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60"
+          >
+            Verifikasi
+          </button>
+        </form>
+
+        <p className="mt-4 text-xs text-slate-500">
+          Hubungi admin jika lupa PIN
+        </p>
+      </div>
+    </div>
+  );
+}
 if (!otherUser) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-slate-950 text-white">
