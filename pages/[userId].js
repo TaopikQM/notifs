@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import { ref, get, set, push, onValue, off, database } from "../lib/firebase";
+import { ref, get, set, push, onValue, off, update, database } from "../lib/firebase";
 import { getChatPairKey, formatLastSeen,  setUserOnline,
   setUserOffline,
   getUserPresence, 
@@ -594,6 +594,28 @@ useEffect(() => {
     return () => off(messagesRef, "value", unsubscribe);
   }, [userId, otherUser]);
 
+  // Tandai semua pesan dari partner sebagai sudah dibaca
+  useEffect(() => {
+    if (!userId || !otherUser || messages.length === 0) return;
+  
+    const chatPairKey = getChatPairKey(userId, otherUser);
+  
+    const unread = messages.filter(
+      (m) => m.sender !== userId && !m.isRead
+    );
+  
+    if (unread.length === 0) return;
+  
+    const updates = {};
+    unread.forEach((m) => {
+      updates[`chat-messages/${chatPairKey}/${m.id}/isRead`] = true;
+    });
+  
+    update(ref(database), updates).catch((err) =>
+      console.error("Gagal update read status:", err)
+    );
+  }, [messages, userId, otherUser]);
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
 
@@ -1137,17 +1159,23 @@ Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-fl
               >
                 <p className="break-words">{msg.message}</p>
                
-                <p className="mt-1 text-xs opacity-70">
-  {new Date(msg.timestamp).toLocaleString('id-ID', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  }).replace(/\//g, '-')}
-</p>
+                  <p className="mt-1 text-xs opacity-70">
+                    {new Date(msg.timestamp).toLocaleString('id-ID', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      hour12: false
+                    }).replace(/\//g, '-')}
+                  </p>
+                     {isMe &&
+                        (msg.isRead ? (
+                          <span className="text-[10px] text-emerald-300">✓✓</span>
+                        ) : (
+                          <span className="text-[10px] text-slate-300">✓</span>
+                        ))}
               </div>
             </div>
           ))
