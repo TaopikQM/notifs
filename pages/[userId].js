@@ -16,15 +16,15 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false);
   const [otherUserPresence, setOtherUserPresence] = useState(null);
   const [currentUserPresence, setCurrentUserPresence] = useState(null);
+  
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
+  const [isChatUnlocked, setIsChatUnlocked] = useState(false);
   
-  const [isLocked, setIsLocked] = useState(false);
-//   const isLocked = pairData.lockUserA && pairData.pins.userA === userId;
-// const isLockedB = pairData.lockUserB && pairData.pins.userB === userId;
-  const [correctPin, setCorrectPin] = useState(null);
-  const [chatPairKey, setChatPairKey] = useState(null);
+  // const [isLocked, setIsLocked] = useState(false);
+  // const [correctPin, setCorrectPin] = useState(null);
+  // const [chatPairKey, setChatPairKey] = useState(null);
   
   const [chatPairData, setChatPairData] = useState(null);
   const [otherUserStatus, setOtherUserStatus] = useState(null);//ini gagal offline
@@ -178,45 +178,79 @@ export default function ChatPage() {
     };
   }, [userId]);
 
+// Cek apakah user ini yang dikunci dalam pair ini
+  const isUserLocked = (pairData, currentUserId) => {
+    if (!pairData) return false;
+    
+    if (pairData.userA === currentUserId) {
+      return pairData.lockUserA === true;
+    }
+    if (pairData.userB === currentUserId) {
+      return pairData.lockUserB === true;
+    }
+    return false;
+  };
 
-
-   // Cari partner dan cek lock
+  // Ambil PIN yang benar berdasarkan user yang login
+  const getExpectedPin = (pairData, currentUserId) => {
+    if (!pairData) return null;
+    
+    if (pairData.userA === currentUserId) {
+      // Prioritas ke pinUserA, fallback ke pins.userA jika ada
+      return pairData.pinUserA || pairData.pins?.userA || null;
+    }
+    if (pairData.userB === currentUserId) {
+      return pairData.pinUserB || pairData.pins?.userB || null;
+    }
+    return null;
+  };
+  
+ // 3. Cari Partner & Cek Lock Logic (PENTING)
   useEffect(() => {
     if (!userId) return;
 
     const findPartner = async () => {
       try {
         const indexRef = ref(database, `user-chat-index/${userId}`);
-        onValue(indexRef, async (snapshot) => {
+        const unsubscribe = onValue(indexRef, async (snapshot) => {
           if (snapshot.exists()) {
             const chatPairs = snapshot.val();
             const partnerKey = Object.keys(chatPairs)[0];
             const partner = Object.values(chatPairs)[0];
             
-            // Get chat pair data
+            // Ambil data lengkap chat pair
             const pairSnapshot = await get(ref(database, `chat-pairs/${partnerKey}`));
+            
             if (pairSnapshot.exists()) {
               const pairData = pairSnapshot.val();
               setChatPairData(pairData);
 
-              // Cek apakah user dilock
-              const isLocked = pairData.lockUserA && pairData.pinUserA === userId;
-              const isLockedB = pairData.lockUserB && pairData.pinUserB === userId;
-
-              if (isLocked || isLockedB) {
+              // Cek apakah user ini harus memasukkan PIN
+              const locked = isUserLocked(pairData, userId);
+              
+              if (locked) {
+                // Jika terkunci, tampilkan modal PIN
                 setShowPinModal(true);
                 setPinError("");
+                setIsChatUnlocked(false);
+                setOtherUser(null); // Jangan set partner dulu sampai PIN benar
               } else {
+                // Jika tidak terkunci, langsung masuk chat
+                setShowPinModal(false);
                 setOtherUser(partner);
+                setIsChatUnlocked(true);
                 getUserPresence(partner).then(setOtherUserPresence);
               }
+            } else {
+              setOtherUser(null);
             }
           } else {
             setOtherUser(null);
-            setOtherUserPresence(null);
           }
           setLoading(false);
         });
+
+        return () => unsubscribe();
       } catch (err) {
         console.error("Error finding partner:", err);
         setLoading(false);
@@ -226,15 +260,57 @@ export default function ChatPage() {
     findPartner();
   }, [userId]);
 
-  // Verify PIN
-  const verifyPin = async () => {
+  // 4. Listen Partner Presence (Hanya jalan jika partner sudah ter-set)
+  useEffect(() => {
+    if (!otherUser || !isChatUnlocked) return;
+
+    const presenceRef = ref(database, `user-presence/${otherUser}`);
+    const unsubscribe = onValue(presenceRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setOtherUserPresence(snapshot.val());
+      } else {
+        setOtherUserPresence(null);
+      }
+    });
+
+    return () => off(presenceRef, "value", unsubscribe);
+  }, [otherUser, isChatUnlocked]);
+
+  // 5. Listen Pesan (Hanya jalan jika chat sudah terbuka)
+  useEffect(() => {
+    if (!userId || !otherUser || !isChatUnlocked) return;
+
+    const chatPairKey = getChatPairKey(userId, otherUser);
+    const messagesRef = ref(database, `chat-messages/${chatPairKey}`);
+
+    const unsubscribe = onValue(messagesRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const msgArray = Object.entries(data).map(([key, value]) => ({
+          id: key,
+          ...value,
+        }));
+        setMessages(msgArray.sort((a, b) => a.timestamp - b.timestamp));
+      }
+    });
+
+    return () => off(messagesRef, "value", unsubscribe);
+  }, [userId, otherUser, isChatUnlocked]);
+
+  // --- Event Handlers ---
+
+  const handlePinSubmit = (e) => {
+    e.preventDefault();
+    verifyPin();
+  };
+
+  const verifyPin = () => {
     if (!userId || !chatPairData) return;
 
-    const isLockedA = chatPairData.lockUserA && chatPairData.pinUserA === userId;
-    const isLockedB = chatPairData.lockUserB && chatPairData.pinUserB === userId;
+    const expectedPin = getExpectedPin(chatPairData, userId);
 
-    if (!isLockedA && !isLockedB) {
-      setShowPinModal(false);
+    if (!expectedPin) {
+      setPinError("PIN tidak ditemukan untuk user ini");
       return;
     }
 
@@ -243,28 +319,110 @@ export default function ChatPage() {
       return;
     }
 
-    if (pinInput.length < 4 || pinInput.length > 6) {
-      setPinError("PIN harus 4-6 digit");
+    if (String(pinInput) !== String(expectedPin)) {
+      setPinError("PIN salah");
       return;
     }
 
-    const correctPin = isLockedA ? chatPairData.pinUserA : chatPairData.pinUserB;
+    // PIN Benar
+    setShowPinModal(false);
+    setPinInput("");
+    setPinError("");
+    setIsChatUnlocked(true);
 
-    if (pinInput === correctPin) {
-      setShowPinModal(false);
-      setPinInput("");
-      // Get partner again
-      if (chatPairData.userA === userId) {
-        setOtherUser(chatPairData.userB);
-        getUserPresence(chatPairData.userB).then(setOtherUserPresence);
-      } else {
-        setOtherUser(chatPairData.userA);
-        getUserPresence(chatPairData.userA).then(setOtherUserPresence);
-      }
-    } else {
-      setPinError("PIN salah");
-    }
+    // Tentukan partner berdasarkan siapa yang login
+    const partner = (chatPairData.userA === userId) 
+      ? chatPairData.userB 
+      : chatPairData.userA;
+
+    setOtherUser(partner);
+    getUserPresence(partner).then(setOtherUserPresence);
   };
+   // Cari partner dan cek lock
+  // useEffect(() => {
+  //   if (!userId) return;
+
+  //   const findPartner = async () => {
+  //     try {
+  //       const indexRef = ref(database, `user-chat-index/${userId}`);
+  //       onValue(indexRef, async (snapshot) => {
+  //         if (snapshot.exists()) {
+  //           const chatPairs = snapshot.val();
+  //           const partnerKey = Object.keys(chatPairs)[0];
+  //           const partner = Object.values(chatPairs)[0];
+            
+  //           // Get chat pair data
+  //           const pairSnapshot = await get(ref(database, `chat-pairs/${partnerKey}`));
+  //           if (pairSnapshot.exists()) {
+  //             const pairData = pairSnapshot.val();
+  //             setChatPairData(pairData);
+
+  //             // Cek apakah user dilock
+  //             const isLocked = pairData.lockUserA && pairData.pinUserA === userId;
+  //             const isLockedB = pairData.lockUserB && pairData.pinUserB === userId;
+
+  //             if (isLocked || isLockedB) {
+  //               setShowPinModal(true);
+  //               setPinError("");
+  //             } else {
+  //               setOtherUser(partner);
+  //               getUserPresence(partner).then(setOtherUserPresence);
+  //             }
+  //           }
+  //         } else {
+  //           setOtherUser(null);
+  //           setOtherUserPresence(null);
+  //         }
+  //         setLoading(false);
+  //       });
+  //     } catch (err) {
+  //       console.error("Error finding partner:", err);
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   findPartner();
+  // }, [userId]);
+
+  // // Verify PIN
+  // const verifyPin = async () => {
+  //   if (!userId || !chatPairData) return;
+
+  //   const isLockedA = chatPairData.lockUserA && chatPairData.pinUserA === userId;
+  //   const isLockedB = chatPairData.lockUserB && chatPairData.pinUserB === userId;
+
+  //   if (!isLockedA && !isLockedB) {
+  //     setShowPinModal(false);
+  //     return;
+  //   }
+
+  //   if (!pinInput) {
+  //     setPinError("PIN wajib diisi");
+  //     return;
+  //   }
+
+  //   if (pinInput.length < 4 || pinInput.length > 6) {
+  //     setPinError("PIN harus 4-6 digit");
+  //     return;
+  //   }
+
+  //   const correctPin = isLockedA ? chatPairData.pinUserA : chatPairData.pinUserB;
+
+  //   if (pinInput === correctPin) {
+  //     setShowPinModal(false);
+  //     setPinInput("");
+  //     // Get partner again
+  //     if (chatPairData.userA === userId) {
+  //       setOtherUser(chatPairData.userB);
+  //       getUserPresence(chatPairData.userB).then(setOtherUserPresence);
+  //     } else {
+  //       setOtherUser(chatPairData.userA);
+  //       getUserPresence(chatPairData.userA).then(setOtherUserPresence);
+  //     }
+  //   } else {
+  //     setPinError("PIN salah");
+  //   }
+  // };
   
   // Cari partner chat user
   useEffect(() => {
@@ -392,20 +550,18 @@ export default function ChatPage() {
     );
   }
 
-  if (!otherUser) {
-    return (
-      <div className="flex h-screen flex-col items-center justify-center bg-slate-950 text-white">
-        <p className="mb-4 text-xl">Tidak ada chat partner untuk user: {userId}</p>
-        <a href="/admin/add-user" className="text-blue-400 underline">
-          Buat pair chat baru
-        </a>
-      </div>
-    );
-  }
-
-
-  // PIN Lock Screen
-  if (isLocked) {
+  // if (!otherUser) {
+  //   return (
+  //     <div className="flex h-screen flex-col items-center justify-center bg-slate-950 text-white">
+  //       <p className="mb-4 text-xl">Tidak ada chat partner untuk user: {userId}</p>
+  //       <a href="/admin/add-user" className="text-blue-400 underline">
+  //         Buat pair chat baru
+  //       </a>
+  //     </div>
+  //   );
+  // }
+// --- PIN Lock Screen (Tampil jika terkunci) ---
+  if (showPinModal && chatPairData) {
     return (
       <div className="flex h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         <div className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl backdrop-blur">
@@ -416,7 +572,9 @@ export default function ChatPage() {
               </svg>
             </div>
             <h1 className="text-2xl font-bold text-white">🔐 Chat Terkunci</h1>
-             <p className="mt-2 text-slate-400">Masukkan PIN untuk membuka chat dengan {otherUser}</p>
+            <p className="mt-2 text-slate-400">
+              Masukkan PIN untuk membuka chat
+            </p>
           </div>
 
           <form onSubmit={handlePinSubmit} className="space-y-4">
@@ -459,6 +617,72 @@ export default function ChatPage() {
       </div>
     );
   }
+
+  // --- Main Chat Screen ---
+  if (!otherUser || !isChatUnlocked) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-950 text-white">
+        <p>Membuka chat...</p>
+      </div>
+    );
+  }
+
+
+  // // PIN Lock Screen
+  // if (isLocked) {
+  //   return (
+  //     <div className="flex h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+  //       <div className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl backdrop-blur">
+  //         <div className="mb-6 text-center">
+  //           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-600/20">
+  //             <svg className="h-8 w-8 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+  //               <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 2.002c.659 0 1.35.252 2.344.656V5.5l-2.344-.496zm0 0V5.5L9.656 5.004C10.65 4.6 11.341 4.002 12 4.002z"/>
+  //             </svg>
+  //           </div>
+  //           <h1 className="text-2xl font-bold text-white">🔐 Chat Terkunci</h1>
+  //            <p className="mt-2 text-slate-400">Masukkan PIN untuk membuka chat dengan {otherUser}</p>
+  //         </div>
+
+  //         <form onSubmit={handlePinSubmit} className="space-y-4">
+  //           <div>
+  //             <label className="mb-2 block text-center text-sm font-medium text-slate-300">
+  //               Masukkan PIN (4-6 digit)
+  //             </label>
+  //             <input
+  //               type="password"
+  //               value={pinInput}
+  //               onChange={(e) => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
+  //               placeholder="••••••"
+  //               maxLength="6"
+  //               autoFocus
+  //               className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-4 text-center text-2xl font-bold tracking-widest text-white outline-none transition placeholder:text-slate-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30"
+  //             />
+  //           </div>
+
+  //           {pinError && (
+  //             <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-center text-sm text-red-200">
+  //               {pinError}
+  //             </div>
+  //           )}
+
+  //           <button
+  //             type="submit"
+  //             disabled={!pinInput || pinInput.length < 4}
+  //             className="w-full rounded-xl bg-amber-600 px-4 py-3 font-semibold text-white transition hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
+  //           >
+  //             Buka Chat
+  //           </button>
+  //         </form>
+
+  //         <div className="mt-6 text-center">
+  //           <p className="text-xs text-slate-500">
+  //             Lupa PIN? Hubungi administrator.
+  //           </p>
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 // {otherUserStatus && (
 //                       <>
 //                         <span className="text-slate-600">•</span>
