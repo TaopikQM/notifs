@@ -233,7 +233,7 @@ useEffect(() => {
   
   // Set status online saat halaman dibuka
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || isBlocked) return;
 
     const setStatusOnline = async () => {
       try {
@@ -274,7 +274,7 @@ useEffect(() => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       handleBeforeUnload(); // Set offline saat unmount
     };
-  }, [userId]);
+  }, [userId, isBlocked]);
 
 // // 1. Cek apakah user ini yang harus memasukkan PIN
 //   const isUserLocked = (pairData, currentUserId) => {
