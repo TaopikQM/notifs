@@ -340,7 +340,7 @@ export default function AdminDashboard() {
   };
 
   // --- HANDLE STATUS TOGGLE PER DIRECTION ---
-  const handleDirectionStatusToggle = async (id, directionKey) => {
+  const handleDirectionStatusToggleU = async (id, directionKey) => {
     const user = users.find(u => u.id === id);
     if (!user || !user.directions || !user.directions[directionKey]) return;
 
@@ -365,6 +365,63 @@ export default function AdminDashboard() {
       await saveToLog(id, oldData, updatedUser);
 
       console.log(`✅ Status ${directionKey} berhasil diubah menjadi ${newStatus}`);
+    } catch (err) {
+      console.error("Error updating direction status:", err);
+      alert("Gagal mengubah status direction");
+    }
+  };
+
+  // --- HANDLE DIRECTION STATUS TOGGLE (dengan Log Detail) ---
+  const handleDirectionStatusToggle = async (id, directionKey) => {
+    const user = users.find(u => u.id === id);
+    if (!user || !user.directions || !user.directions[directionKey]) return;
+
+    const currentDirection = user.directions[directionKey];
+    const newStatus = currentDirection.status === "active" ? "inactive" : "active";
+
+    try {
+      // Simpan data lama lengkap
+      const oldData = { ...user };
+      
+      // Buat data baru dengan perubahan
+      const updatedUser = {
+        ...user,
+        directions: {
+          ...user.directions,
+          [directionKey]: {
+            ...currentDirection,
+            status: newStatus,
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      };
+
+      // Update ke Firebase chat-pairs
+      await set(ref(database, `chat-pairs/${id}`), updatedUser);
+
+      // Simpan log dengan detail perubahan
+      const logData = {
+        chatPairId: id,
+        changeType: "direction_status_update", // ✅ Tipe perubahan
+        directionKey: directionKey, // ✅ Direction mana yang berubah
+        oldStatus: currentDirection.status, // ✅ Status lama
+        newStatus: newStatus, // ✅ Status baru
+        oldData: oldData, // ✅ Semua data lama
+        newData: updatedUser, // ✅ Semua data baru
+        changedAt: new Date().toISOString(),
+        changedBy: "admin",
+        details: {
+          sender: currentDirection.sender,
+          receiver: currentDirection.receiver,
+          reason: `Direction status toggled from ${currentDirection.status} to ${newStatus}`,
+        },
+      };
+
+      // Simpan ke log_chat-pairs
+      await saveToLog(id, oldData, logData);
+
+      console.log(`✅ Status ${directionKey} berhasil diubah dari ${currentDirection.status} menjadi ${newStatus}`);
+      alert(`✅ Status ${directionKey} berhasil diubah menjadi ${newStatus}`);
     } catch (err) {
       console.error("Error updating direction status:", err);
       alert("Gagal mengubah status direction");
@@ -560,7 +617,7 @@ export default function AdminDashboard() {
                                         {user.status === "active" ? "✅ Active" : "❌ Inactive"}
                                       </button>
                                     </div>
-                                  </div>*/}
+                                  </div>
 
                                                                    <div className="space-y-3">
                                     <div>
@@ -594,7 +651,7 @@ export default function AdminDashboard() {
                                         </button>
                                       </div>
                                     </div>
-                                  </div>
+                                  </div>*/}
 { /* <div>
                                     <span className="text-xs text-slate-500">Status:</span>
                                     <div>{renderEditableField(user.id, "status", user.status)}</div>
@@ -623,10 +680,10 @@ export default function AdminDashboard() {
                               </div>
 
                               {/* Directions */}
-                              <div className="border-t border-slate-700 pt-4">
+                             {/* <div className="border-t border-slate-700 pt-4">
                                 <span className="text-xs text-slate-500">Directions:</span>
                                 {renderNestedObject(user.directions)}
-                              </div>
+                              </div> */}
                               {/* Directions */}
                               <div className="border-t border-slate-700 pt-4">
                                 <h4 className="text-sm font-semibold text-slate-300 mb-3">🔄 Directions (Chat Routes)</h4>
