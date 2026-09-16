@@ -178,7 +178,7 @@ export default function ChatPage() {
     };
   }, [userId]);
 
-// Cek apakah user ini yang dikunci dalam pair ini
+// 1. Cek apakah user ini yang harus memasukkan PIN
   const isUserLocked = (pairData, currentUserId) => {
     if (!pairData) return false;
     
@@ -191,12 +191,11 @@ export default function ChatPage() {
     return false;
   };
 
-  // Ambil PIN yang benar berdasarkan user yang login
+  // 2. Ambil PIN yang benar berdasarkan user yang login
   const getExpectedPin = (pairData, currentUserId) => {
     if (!pairData) return null;
     
     if (pairData.userA === currentUserId) {
-      // Prioritas ke pinUserA, fallback ke pins.userA jika ada
       return pairData.pinUserA || pairData.pins?.userA || null;
     }
     if (pairData.userB === currentUserId) {
@@ -205,7 +204,7 @@ export default function ChatPage() {
     return null;
   };
   
- // 3. Cari Partner & Cek Lock Logic (PENTING)
+ // 3. Cari Partner & Cek Lock Logic (Satu-satunya efek yang aktif)
   useEffect(() => {
     if (!userId) return;
 
@@ -260,7 +259,7 @@ export default function ChatPage() {
     findPartner();
   }, [userId]);
 
-  // 4. Listen Partner Presence (Hanya jalan jika partner sudah ter-set)
+  // 4. Listen Partner Presence (Hanya jalan jika chat sudah terbuka)
   useEffect(() => {
     if (!otherUser || !isChatUnlocked) return;
 
@@ -551,7 +550,7 @@ export default function ChatPage() {
   }
 
   
-// --- PIN Lock Screen (Tampil jika terkunci) ---
+// ✅ Lock Screen Harus Paling Awal Setelah Loading
   if (showPinModal && chatPairData) {
     return (
       <div className="flex h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
@@ -571,13 +570,13 @@ export default function ChatPage() {
           <form onSubmit={handlePinSubmit} className="space-y-4">
             <div>
               <label className="mb-2 block text-center text-sm font-medium text-slate-300">
-                Masukkan PIN (4-6 digit)
+                Masukkan PIN
               </label>
               <input
                 type="password"
                 value={pinInput}
                 onChange={(e) => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="••••••"
+                placeholder="••••"
                 maxLength="6"
                 autoFocus
                 className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-4 text-center text-2xl font-bold tracking-widest text-white outline-none transition placeholder:text-slate-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30"
@@ -592,7 +591,7 @@ export default function ChatPage() {
 
             <button
               type="submit"
-              disabled={!pinInput || pinInput.length < 1}
+              disabled={!pinInput}
               className="w-full rounded-xl bg-amber-600 px-4 py-3 font-semibold text-white transition hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Buka Chat
@@ -615,6 +614,15 @@ if (!otherUser) {
         <a href="/admin/add-user" className="text-blue-400 underline">
           Buat pair chat baru
         </a>
+      </div>
+    );
+  }
+
+// Chat utama
+  if (!isChatUnlocked) {
+     return (
+      <div className="flex h-screen items-center justify-center bg-slate-950 text-white">
+        <p>Membuka chat...</p>
       </div>
     );
   }
