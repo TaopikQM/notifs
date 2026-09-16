@@ -751,6 +751,38 @@ useEffect(() => {
     );
   };
 
+const renderStatusIndicatorlg = (presence) => {
+    if (!presence) {
+      return (
+        <span className="inline-flex items-center gap-1 text-xs text-slate-400">
+          <span className="h-2 w-2 rounded-full bg-slate-500"></span>
+         
+        </span>
+      );
+    }
+
+    if (presence.status === "online") {
+      return (
+        <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+         
+        </span>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-red-400">
+       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+           
+        <span className="h-2 w-2 rounded-full bg-red-500"></span>
+       
+      </span>
+    );
+  };
+
   // if (!userId) {
   //   return (
   //     <div className="flex h-screen items-center justify-center bg-slate-950 text-white">
@@ -1055,7 +1087,10 @@ if (!otherUser) {
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
                   </span>
                 )}*/}
-{currentUserPresence?.status === "online" ? (
+{renderStatusIndicatorlg(otherUserPresence)}
+
+                
+                {/*{currentUserPresence?.status === "online" ? (
   <span className="relative flex h-3 w-3">
     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
     <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
@@ -1067,8 +1102,7 @@ if (!otherUser) {
     <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
   </span>
 )}
-                
-                {/* Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
                    
                 {currentUserPresence?.status !== "online" && (
                   <span className="relative flex h-3 w-3">
