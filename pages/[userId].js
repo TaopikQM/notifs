@@ -22,12 +22,43 @@ export default function ChatPage() {
   const [pinInput, setPinInput] = useState("");
   const [pinVerified, setPinVerified] = useState(false);
   const [pinError, setPinError] = useState("");
+
+  const [attemptCount, setAttemptCount] = useState(0);
+  const [maxAttempts] = useState(4);
+  const [isBlocked, setIsBlocked] = useState(false); // Akses diblokir
+  const [lockoutTime, setLockoutTime] = useState(null); // Waktu blokir dimulai
+  const [countdown, setCountdown] = useState(60); // Countdown dalam detik
  
   const [chatPairData, setChatPairData] = useState(null);
   const [otherUserStatus, setOtherUserStatus] = useState(null);//ini gagal offline
   const messagesEndRef = useRef(null);
   const heartbeatRef = useRef(null);
 
+  // Countdown timer saat akses diblokir
+  useEffect(() => {
+    if (!isBlocked || !lockoutTime) return;
+  
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const elapsed = Math.floor((now - lockoutTime) / 1000);
+      const remaining = 60 - elapsed;
+  
+      if (remaining <= 0) {
+        // Lockout selesai
+        setIsBlocked(false);
+        setLockoutTime(null);
+        setAttemptCount(0);
+        setPinError("");
+        setCountdown(60);
+        clearInterval(interval);
+      } else {
+        setCountdown(remaining);
+      }
+    }, 1000);
+  
+    return () => clearInterval(interval);
+  }, [isBlocked, lockoutTime]);
+  
   // Auto scroll ke bawah
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -545,7 +576,7 @@ const getCurrentUserPin = (data, currentUserId) => {
   return null;
 };
 
-const handlePinSubmit = (e) => {
+const handlePinSubmitU = (e) => {
   e.preventDefault();
   
   if (!chatPairData) return;
@@ -561,6 +592,55 @@ const handlePinSubmit = (e) => {
     setPinInput("");
   }
 };
+useEffect(() => {
+  return () => {
+    setAttemptCount(0);
+    setIsBlocked(false);
+    setLockoutTime(null);
+    setCountdown(60);
+    setPinInput("");
+    setPinError("");
+  };
+}, []);
+    const handlePinSubmit = (e) => {
+    e.preventDefault();
+  
+    if (!chatPairData || isBlocked) return;
+  
+    const correctPin = getCurrentUserPin(chatPairData, userId);
+    const newAttemptCount = attemptCount + 1;
+    const remainingAttempts = maxAttempts - newAttemptCount;
+  
+    if (pinInput === correctPin) {
+      // ✓ PIN BENAR
+      setPinVerified(true);
+      setPinError("");
+      setPinInput("");
+      setAttemptCount(0);
+      setLockoutTime(null);
+      setCountdown(60);
+    } else {
+      // ✗ PIN SALAH
+      setAttemptCount(newAttemptCount);
+  
+      if (remainingAttempts > 0) {
+        // Masih ada kesempatan
+        setPinError(
+          `❌ PIN salah! Sisa ${remainingAttempts} kesempatan lagi.`
+        );
+      } else {
+        // Kesempatan habis - mulai lockout 1 menit
+        setIsBlocked(true);
+        setLockoutTime(Date.now());
+        setCountdown(60);
+        setPinError(
+          `❌ Kesempatan habis! Akses diblokir selama 1 menit.`
+        );
+      }
+  
+      setPinInput("");
+    }
+  };
   
    const renderStatusIndicator = (presence) => {
     if (!presence) {
@@ -684,6 +764,42 @@ if (isLocked && !pinVerified) {
         <h2 className="mb-2 text-2xl font-bold text-white">Chat Terkunci</h2>
         <p className="mb-6 text-slate-400">Masukkan PIN untuk akses chat</p>
 
+         {/* Indikator Kesempatan */}
+        <div className="mb-6 rounded-lg bg-slate-800/50 p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-sm text-slate-300">
+              Kesempatan:{" "}
+              <span className="font-bold text-indigo-400">
+                {maxAttempts - attemptCount}
+              </span>{" "}
+              / {maxAttempts}
+            </span>
+          </div>
+
+          {/* Progress Bar Kesempatan */}
+          <div className="flex gap-1">
+            {Array.from({ length: maxAttempts }).map((_, i) => (
+              <div
+                key={i}
+                className={`h-3 flex-1 rounded-full transition-all ${
+                  i < attemptCount ? "bg-red-500" : "bg-slate-600"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Countdown Timer (Jika Diblokir) */}
+        {isBlocked && (
+          <div className="mb-6 rounded-lg border border-red-500/50 bg-red-500/10 p-4 text-center">
+            <p className="mb-2 text-sm text-red-400">⏱️ Akses Diblokir</p>
+            <p className="text-4xl font-bold text-red-500">{countdown}s</p>
+            <p className="mt-2 text-xs text-red-400">
+              Coba lagi dalam {countdown} detik
+            </p>
+          </div>
+        )}
+
         <form onSubmit={handlePinSubmit} className="space-y-4">
           <div>
             <input
@@ -692,25 +808,39 @@ if (isLocked && !pinVerified) {
               onChange={(e) => setPinInput(e.target.value)}
               placeholder="Masukkan PIN..."
               maxLength="6"
-              className="w-full rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-2 text-center text-2xl tracking-widest text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+             disabled={isBlocked}
+              className="w-full rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-2 text-center text-2xl tracking-widest text-white outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
             />
             {pinError && (
-              <p className="mt-2 text-sm text-red-400">{pinError}</p>
+              <p
+                className={`mt-2 text-sm ${
+                  isBlocked ? "text-red-400" : "text-orange-400"
+                }`}
+              >
+                {pinError}
+              </p>
             )}
           </div>
 
           <button
             type="submit"
-            disabled={!pinInput.trim()}
-            className="w-full rounded-lg bg-indigo-600 py-2 font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60"
-          >
-            Verifikasi
+            disabled={!pinInput.trim() || isBlocked}
+            className={`w-full rounded-lg py-2 font-semibold text-white transition ${
+              isBlocked
+                ? "cursor-not-allowed bg-slate-600 opacity-50"
+                : "bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60"
+            }`}
+            >
+             {isBlocked ? `Tunggu ${countdown}s` : "Verifikasi"}
           </button>
         </form>
 
-        <p className="mt-4 text-xs text-slate-500">
-          Hubungi admin jika lupa PIN
-        </p>
+         {/* Info */}
+        <div className="mt-4 space-y-2 text-xs text-slate-500">
+          <p>💡 PIN terdiri dari angka</p>
+          <p>⚠️ 4 kesempatan gagal = blokir 1 menit</p>
+          <p>📞 Hubungi admin jika perlu bantuan</p>
+        </div>
       </div>
     </div>
   );
