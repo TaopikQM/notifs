@@ -530,7 +530,7 @@ export default function AdminDashboard() {
                                       />
                                       <span className="text-sm text-slate-300">Lock User A ({user.userA})</span>
                                     </label>
-                                    {lockCheckbox.userA && (
+{/* {lockCheckbox.userA && (
                                       <input
                                         type="password"
                                         value={pinInputs.userA}
@@ -539,6 +539,21 @@ export default function AdminDashboard() {
                                         maxLength="6"
                                         className="w-full rounded-md border border-amber-500 bg-slate-950 px-2 py-1 text-sm text-white outline-none focus:ring-2 focus:ring-amber-500"
                                       />
+                                    )}*/}
+                                     {lockCheckbox.userA && (
+                                      <div className="flex items-center gap-2">
+                                        <input
+                                          type="text"
+                                          value={pinInputs.userA}
+                                          onChange={(e) => handlePinInputChange("userA", e.target.value)}
+                                          placeholder="PIN 4-6 digit"
+                                          maxLength="6"
+                                          className="flex-1 rounded-md border border-amber-500 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-amber-500 font-mono tracking-widest"
+                                        />
+                                        <span className="text-xs text-slate-400 font-mono">
+                                          {pinInputs.userA ? `PIN: ${pinInputs.userA}` : "Kosong"}
+                                        </span>
+                                      </div>
                                     )}
                                   </div>
 
@@ -553,7 +568,7 @@ export default function AdminDashboard() {
                                       />
                                       <span className="text-sm text-slate-300">Lock User B ({user.userB})</span>
                                     </label>
-                                    {lockCheckbox.userB && (
+{/*  {lockCheckbox.userB && (
                                       <input
                                         type="password"
                                         value={pinInputs.userB}
@@ -562,7 +577,22 @@ export default function AdminDashboard() {
                                         maxLength="6"
                                         className="w-full rounded-md border border-amber-500 bg-slate-950 px-2 py-1 text-sm text-white outline-none focus:ring-2 focus:ring-amber-500"
                                       />
-                                    )}
+                                    )}*/}
+                                      {lockCheckbox.userB && (
+                                        <div className="flex items-center gap-2">
+                                          <input
+                                            type="text"
+                                            value={pinInputs.userB}
+                                            onChange={(e) => handlePinInputChange("userB", e.target.value)}
+                                            placeholder="PIN 4-6 digit"
+                                            maxLength="6"
+                                            className="flex-1 rounded-md border border-amber-500 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-amber-500 font-mono tracking-widest"
+                                          />
+                                          <span className="text-xs text-slate-400 font-mono">
+                                            {pinInputs.userB ? `PIN: ${pinInputs.userB}` : "Kosong"}
+                                          </span>
+                                        </div>
+                                      )}
                                   </div>
                                 </div>
 
