@@ -97,6 +97,11 @@ export default function AdminDashboard() {
           userA: user.lockUserA || false,
           userB: user.lockUserB || false,
         });
+         // ✅ Load PIN dari Firebase
+        setPinInputs({
+          userA: user.pinUserA || "",
+          userB: user.pinUserB || "",
+        });
       }
     }
   };
