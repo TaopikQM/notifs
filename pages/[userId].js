@@ -774,7 +774,6 @@ const renderStatusIndicatorlg = (presence) => {
 
     return (
       <span className="inline-flex items-center gap-1 text-xs text-red-400">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
            
         <span className="h-2 w-2 rounded-full bg-red-500"></span>
        
@@ -1137,7 +1136,18 @@ Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-fl
                 }`}
               >
                 <p className="break-words">{msg.message}</p>
-                <p className="mt-1 text-xs opacity-70">{msg.sentAt}</p>
+               
+                <p className="mt-1 text-xs opacity-70">
+  {new Date(msg.timestamp).toLocaleString('id-ID', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).replace(/\//g, '-')}
+</p>
               </div>
             </div>
           ))
