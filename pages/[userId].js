@@ -451,25 +451,25 @@ export default function ChatPage() {
   // }, [userId]);
 
   // Real-time listen pesan
-  useEffect(() => {
-    if (!userId || !otherUser) return;
+  // useEffect(() => {
+  //   if (!userId || !otherUser) return;
 
-    const chatPairKey = getChatPairKey(userId, otherUser);
-    const messagesRef = ref(database, `chat-messages/${chatPairKey}`);
+  //   const chatPairKey = getChatPairKey(userId, otherUser);
+  //   const messagesRef = ref(database, `chat-messages/${chatPairKey}`);
 
-    const unsubscribe = onValue(messagesRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        const msgArray = Object.entries(data).map(([key, value]) => ({
-          id: key,
-          ...value,
-        }));
-        setMessages(msgArray.sort((a, b) => a.timestamp - b.timestamp));
-      }
-    });
+  //   const unsubscribe = onValue(messagesRef, (snapshot) => {
+  //     if (snapshot.exists()) {
+  //       const data = snapshot.val();
+  //       const msgArray = Object.entries(data).map(([key, value]) => ({
+  //         id: key,
+  //         ...value,
+  //       }));
+  //       setMessages(msgArray.sort((a, b) => a.timestamp - b.timestamp));
+  //     }
+  //   });
 
-    return () => off(messagesRef, "value", unsubscribe);
-  }, [userId, otherUser]);
+  //   return () => off(messagesRef, "value", unsubscribe);
+  // }, [userId, otherUser]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -592,7 +592,7 @@ export default function ChatPage() {
 
             <button
               type="submit"
-              disabled={!pinInput || pinInput.length < 4}
+              disabled={!pinInput || pinInput.length < 1}
               className="w-full rounded-xl bg-amber-600 px-4 py-3 font-semibold text-white transition hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Buka Chat
