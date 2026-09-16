@@ -742,9 +742,11 @@ useEffect(() => {
     }
 
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-slate-400">
-        <span className="h-2 w-2 rounded-full bg-slate-500"></span>
-        Terakhir onli: {presence.lastSeen}
+      <span className="inline-flex items-center gap-1 text-xs text-red-400">
+       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+           
+        <span className="h-2 w-2 rounded-full bg-red-500"></span>
+        Terakhir online: {presence.lastSeen}
       </span>
     );
   };
@@ -1032,9 +1034,9 @@ if (!otherUser) {
             <h1 className="text-xl font-bold">{userId}</h1>
             <div className="mt-1">
               {renderStatusIndicator(otherUserPresence)}
-              <p className="text-xs text-slate-400">
+              {/* <p className="text-xs text-slate-400">
                 {currentUserPresence?.status === "online" ? "Online" : "Offline"}
-              </p>
+              </p>*/}
             </div>
             <div className="flex items-center gap-2 text-sm text-slate-400">
               <p className="text-sm text-slate-400">Chat dengan: {otherUser}</p>
@@ -1051,6 +1053,14 @@ if (!otherUser) {
                   <span className="relative flex h-3 w-3">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                  </span>
+                )}
+                
+                {/* Tambahan kondisi untuk OFFLINE */}
+                {currentUserPresence?.status !== "online" && (
+                  <span className="relative flex h-3 w-3">
+                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                   </span>
                 )}
               </div>
