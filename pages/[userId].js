@@ -127,7 +127,109 @@ useEffect(() => {
 
   return () => clearInterval(interval);
 }, [isBlocked]); // ✓ PERBAIKAN: Tambahkan isBlocked sebagai dependency
+
   
+
+    const isCurrentUserLocked = (data, currentUserId) => {
+      if (currentUserId === data.userA) {
+        return data.lockUserA === true;
+      } else if (currentUserId === data.userB) {
+        return data.lockUserB === true;
+      }
+      return false;
+    };
+    
+    const getCurrentUserPin = (data, currentUserId) => {
+      if (currentUserId === data.userA) {
+        return data.pinUserA || null;
+      } else if (currentUserId === data.userB) {
+        return data.pinUserB || null;
+      }
+      return null;
+    };
+    
+    const handlePinSubmitU = (e) => {
+      e.preventDefault();
+      
+      if (!chatPairData) return;
+    
+      const correctPin = getCurrentUserPin(chatPairData, userId);
+    
+      if (pinInput === correctPin) {
+        setPinVerified(true);
+        setPinError("");
+        setPinInput("");
+      } else {
+        setPinError("PIN salah!");
+        setPinInput("");
+      }
+    };
+    useEffect(() => {
+      return () => {
+        setAttemptCount(0);
+        setIsBlocked(false);
+        setLockoutTime(null);
+        // setCountdown(60);
+        
+          setCountdown(LOCKOUT_DURATION);
+        setPinInput("");
+        setPinError("");
+      };
+    }, []);
+
+  
+    const handlePinSubmit = (e) => {
+      e.preventDefault();
+    
+      if (!chatPairData || isBlocked) return;
+    
+      const correctPin = getCurrentUserPin(chatPairData, userId);
+      const newAttemptCount = attemptCount + 1;
+      const remainingAttempts = maxAttempts - newAttemptCount;
+    
+      if (pinInput === correctPin) {
+        // ✓ PIN BENAR
+        setPinVerified(true);
+        setPinError("");
+        setPinInput("");
+        setAttemptCount(0);
+        // setLockoutTime(null);
+        
+        setCountdown(0);
+        clearLockout();
+      } else {
+        // ✗ PIN SALAH
+        setAttemptCount(newAttemptCount);
+    
+        if (remainingAttempts > 0) {
+          // Masih ada kesempatan
+          setPinError(
+            `❌ PIN salah! Sisa ${remainingAttempts} kesempatan lagi.`
+          );
+        } else {
+          // Kesempatan habis - mulai lockout 1 menit
+          setIsBlocked(true);
+          // setLockoutTime();
+          saveLockoutTime();
+          setCountdown(LOCKOUT_DURATION);
+          setPinError(
+            `❌ Kesempatan habis! Akses diblokir selama 1 menit.`
+          );
+        }
+    
+        setPinInput("");
+      }
+    };
+
+
+
+
+
+
+
+
+
+  //habis lock
   
   // Auto scroll ke bawah
   const scrollToBottom = () => {
@@ -233,7 +335,7 @@ useEffect(() => {
   
   // Set status online saat halaman dibuka
   useEffect(() => {
-    if (!userId || isLocked) return;
+    if (!userId) return;
 
     const setStatusOnline = async () => {
       try {
@@ -274,7 +376,7 @@ useEffect(() => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       handleBeforeUnload(); // Set offline saat unmount
     };
-  }, [userId, isLocked]);
+  }, [userId]);
 
 // // 1. Cek apakah user ini yang harus memasukkan PIN
 //   const isUserLocked = (pairData, currentUserId) => {
@@ -649,97 +751,6 @@ useEffect(() => {
     }
   };
 
-
-    const isCurrentUserLocked = (data, currentUserId) => {
-      if (currentUserId === data.userA) {
-        return data.lockUserA === true;
-      } else if (currentUserId === data.userB) {
-        return data.lockUserB === true;
-      }
-      return false;
-    };
-    
-    const getCurrentUserPin = (data, currentUserId) => {
-      if (currentUserId === data.userA) {
-        return data.pinUserA || null;
-      } else if (currentUserId === data.userB) {
-        return data.pinUserB || null;
-      }
-      return null;
-    };
-    
-    const handlePinSubmitU = (e) => {
-      e.preventDefault();
-      
-      if (!chatPairData) return;
-    
-      const correctPin = getCurrentUserPin(chatPairData, userId);
-    
-      if (pinInput === correctPin) {
-        setPinVerified(true);
-        setPinError("");
-        setPinInput("");
-      } else {
-        setPinError("PIN salah!");
-        setPinInput("");
-      }
-    };
-    useEffect(() => {
-      return () => {
-        setAttemptCount(0);
-        setIsBlocked(false);
-        setLockoutTime(null);
-        // setCountdown(60);
-        
-          setCountdown(LOCKOUT_DURATION);
-        setPinInput("");
-        setPinError("");
-      };
-    }, []);
-
-  
-    const handlePinSubmit = (e) => {
-      e.preventDefault();
-    
-      if (!chatPairData || isBlocked) return;
-    
-      const correctPin = getCurrentUserPin(chatPairData, userId);
-      const newAttemptCount = attemptCount + 1;
-      const remainingAttempts = maxAttempts - newAttemptCount;
-    
-      if (pinInput === correctPin) {
-        // ✓ PIN BENAR
-        setPinVerified(true);
-        setPinError("");
-        setPinInput("");
-        setAttemptCount(0);
-        // setLockoutTime(null);
-        
-        setCountdown(0);
-        clearLockout();
-      } else {
-        // ✗ PIN SALAH
-        setAttemptCount(newAttemptCount);
-    
-        if (remainingAttempts > 0) {
-          // Masih ada kesempatan
-          setPinError(
-            `❌ PIN salah! Sisa ${remainingAttempts} kesempatan lagi.`
-          );
-        } else {
-          // Kesempatan habis - mulai lockout 1 menit
-          setIsBlocked(true);
-          // setLockoutTime();
-          saveLockoutTime();
-          setCountdown(LOCKOUT_DURATION);
-          setPinError(
-            `❌ Kesempatan habis! Akses diblokir selama 1 menit.`
-          );
-        }
-    
-        setPinInput("");
-      }
-    };
   
    const renderStatusIndicator = (presence) => {
     if (!presence) {
