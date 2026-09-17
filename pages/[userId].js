@@ -227,95 +227,148 @@ useEffect(() => {
 
 
 
-
-
-  //habis lock
-  
-  // Auto scroll ke bawah
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+// --- PERBAIKAN 1: Auto Scroll ke Bawah ---
+  const scrollToBottom = (force = false) => {
+    if (messagesEndRef.current) {
+      if (force) {
+        messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+      } else {
+        // Hanya scroll otomatis jika user sedang berada di posisi paling bawah
+        // agar tidak mengganggu user yang sedang membaca riwayat
+        const container = chatContainerRef.current;
+        if (container) {
+          const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+          if (isNearBottom) {
+            messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+          }
+        } else {
+           messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+      }
+    }
   };
 
   useEffect(() => {
+    // Scroll otomatis saat pesan baru masuk atau chat pertama kali dimuat
     scrollToBottom();
-  }, [messages]);
+  }, [messages, userId, otherUser]); // Tambahkan userId/otherUser untuk trigger saat chat awal
 
-  // Set user online + heartbeat + visibility listener
-  useEffect(() => {
-    if (!userId) return;
+  // --- PERBAIKAN 2: Toggle Tombol Melayang (Floating Arrow) ---
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
 
-    const initPresence = async () => {
-      await setUserOnline(userId);
-      const presence = await getUserPresence(userId);
-      setCurrentUserPresence(presence);
-
-      // Start heartbeat setiap 30 detik
-      heartbeatRef.current = startHeartbeat(userId, 30000);
-
-      // Handle visibility change (tab minimize/hidden)
-      const handleVisibilityChange = () => {
-        if (document.hidden) {
-          console.log("[Visibility] Tab hidden - user offline");
-          setUserOffline(userId);
-          if (heartbeatRef.current) {
-            clearInterval(heartbeatRef.current);
-            heartbeatRef.current = null;
-          }
-        } else {
-          console.log("[Visibility] Tab visible - user online");
-          setUserOnline(userId);
-          if (!heartbeatRef.current) {
-            heartbeatRef.current = startHeartbeat(userId, 30000);
-          }
-        }
-      };
-
-      // Handle beforeunload (close tab/refresh)
-      const handleBeforeUnload = () => {
-        console.log("[BeforeUnload] Setting offline");
-        setUserOffline(userId);
-        if (heartbeatRef.current) {
-          clearInterval(heartbeatRef.current);
-        }
-      };
-
-      // Add event listeners
-      document.addEventListener("visibilitychange", handleVisibilityChange);
-      window.addEventListener("beforeunload", handleBeforeUnload);
-
-      // Cleanup
-      return () => {
-        document.removeEventListener("visibilitychange", handleVisibilityChange);
-        window.removeEventListener("beforeunload", handleBeforeUnload);
-        setUserOffline(userId);
-        if (heartbeatRef.current) {
-          clearInterval(heartbeatRef.current);
-        }
-      };
-    };
-
-    initPresence();
-  }, [userId]);
-
-// Set user online saat masuk halaman
-  useEffect(() => {
-    if (!userId) return;
-
-    const initPresence = async () => {
-      await setUserOnline(userId);
-      const presence = await getUserPresence(userId);
-      setCurrentUserPresence(presence);
-    };
-
-    initPresence();
-
-    // Cleanup: Set offline saat keluar
-    return () => {
-      if (userId) {
-        setUserOffline(userId);
+  const handleScroll = () => {
+    const container = chatContainerRef.current;
+    if (container) {
+      // Jika scroll lebih dari 200px dari atas, tampilkan tombol
+      if (container.scrollTop > 200) {
+        setShowScrollBtn(true);
+      } else {
+        setShowScrollBtn(false);
       }
-    };
-  }, [userId]);
+    }
+  };
+
+  const scrollToBottomManual = () => {
+    scrollToBottom(true);
+    setShowScrollBtn(false);
+  };
+
+  // Event listener scroll
+  useEffect(() => {
+    const container = chatContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      return () => container.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
+
+  //habis lock
+  
+  // // Auto scroll ke bawah
+  // const scrollToBottom = () => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // };
+
+  // useEffect(() => {
+  //   scrollToBottom();
+  // }, [messages]);
+
+//   // Set user online + heartbeat + visibility listener
+//   useEffect(() => {
+//     if (!userId) return;
+
+//     const initPresence = async () => {
+//       await setUserOnline(userId);
+//       const presence = await getUserPresence(userId);
+//       setCurrentUserPresence(presence);
+
+//       // Start heartbeat setiap 30 detik
+//       heartbeatRef.current = startHeartbeat(userId, 30000);
+
+//       // Handle visibility change (tab minimize/hidden)
+//       const handleVisibilityChange = () => {
+//         if (document.hidden) {
+//           console.log("[Visibility] Tab hidden - user offline");
+//           setUserOffline(userId);
+//           if (heartbeatRef.current) {
+//             clearInterval(heartbeatRef.current);
+//             heartbeatRef.current = null;
+//           }
+//         } else {
+//           console.log("[Visibility] Tab visible - user online");
+//           setUserOnline(userId);
+//           if (!heartbeatRef.current) {
+//             heartbeatRef.current = startHeartbeat(userId, 30000);
+//           }
+//         }
+//       };
+
+//       // Handle beforeunload (close tab/refresh)
+//       const handleBeforeUnload = () => {
+//         console.log("[BeforeUnload] Setting offline");
+//         setUserOffline(userId);
+//         if (heartbeatRef.current) {
+//           clearInterval(heartbeatRef.current);
+//         }
+//       };
+
+//       // Add event listeners
+//       document.addEventListener("visibilitychange", handleVisibilityChange);
+//       window.addEventListener("beforeunload", handleBeforeUnload);
+
+//       // Cleanup
+//       return () => {
+//         document.removeEventListener("visibilitychange", handleVisibilityChange);
+//         window.removeEventListener("beforeunload", handleBeforeUnload);
+//         setUserOffline(userId);
+//         if (heartbeatRef.current) {
+//           clearInterval(heartbeatRef.current);
+//         }
+//       };
+//     };
+
+//     initPresence();
+//   }, [userId]);
+
+// // Set user online saat masuk halaman
+//   useEffect(() => {
+//     if (!userId) return;
+
+//     const initPresence = async () => {
+//       await setUserOnline(userId);
+//       const presence = await getUserPresence(userId);
+//       setCurrentUserPresence(presence);
+//     };
+
+//     initPresence();
+
+//     // Cleanup: Set offline saat keluar
+//     return () => {
+//       if (userId) {
+//         setUserOffline(userId);
+//       }
+//     };
+//   }, [userId]);
 
    // Listen presence partner secara real-time
   useEffect(() => {
@@ -1202,6 +1255,30 @@ Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-fl
         )}
         <div ref={messagesEndRef} />
       </div>
+
+{/* Tombol Melayang (Floating Arrow) */}
+      {showScrollBtn && (
+        <button
+          onClick={scrollToBottomManual}
+          className="absolute bottom-24 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition-transform hover:scale-110 active:scale-95 focus:outline-none"
+          aria-label="Scroll ke bawah"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 14l-7 7m0 0l-7-7m7 7V3"
+            />
+          </svg>
+        </button>
+      )}
 
       {/* Input Form */}
       <div className="border-t border-slate-800 bg-slate-900/80 px-4 py-4 backdrop-blur">
