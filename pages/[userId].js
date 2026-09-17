@@ -34,6 +34,8 @@ export default function ChatPage() {
   const messagesEndRef = useRef(null);
   const heartbeatRef = useRef(null);
 
+   const chatContainerRef = useRef(null); // Ref untuk container scroll
+
  
 
   const LOCKOUT_KEY = "pin_lockout_time";
