@@ -173,15 +173,70 @@ export default function ChatPage() {
 
 
   //habis lock
-  
-  // Auto scroll ke bawah
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+
+  // --- PERBAIKAN 1: Auto Scroll ke Bawah ---
+  const scrollToBottom = (force = false) => {
+    if (messagesEndRef.current) {
+      if (force) {
+        messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+      } else {
+        // Hanya scroll otomatis jika user sedang berada di posisi paling bawah
+        // agar tidak mengganggu user yang sedang membaca riwayat
+        const container = chatContainerRef.current;
+        if (container) {
+          const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+          if (isNearBottom) {
+            messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+          }
+        } else {
+           messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+      }
+    }
   };
 
   useEffect(() => {
+    // Scroll otomatis saat pesan baru masuk atau chat pertama kali dimuat
     scrollToBottom();
-  }, [messages]);
+  }, [messages, userId, otherUser]); // Tambahkan userId/otherUser untuk trigger saat chat awal
+
+  // --- PERBAIKAN 2: Toggle Tombol Melayang (Floating Arrow) ---
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
+
+  const handleScroll = () => {
+    const container = chatContainerRef.current;
+    if (container) {
+      // Jika scroll lebih dari 200px dari atas, tampilkan tombol
+      if (container.scrollTop > 200) {
+        setShowScrollBtn(true);
+      } else {
+        setShowScrollBtn(false);
+      }
+    }
+  };
+
+  const scrollToBottomManual = () => {
+    scrollToBottom(true);
+    setShowScrollBtn(false);
+  };
+
+  // Event listener scroll
+  useEffect(() => {
+    const container = chatContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      return () => container.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
+  
+  // // Auto scroll ke bawah
+  // const scrollToBottom = () => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // };
+
+  // useEffect(() => {
+  //   scrollToBottom();
+  // }, [messages]);
 
   // Set user online + heartbeat + visibility listener
   // useEffect(() => {
@@ -684,6 +739,30 @@ export default function ChatPage() {
         )}
         <div ref={messagesEndRef} />
       </div>
+
+        {/* Tombol Melayang (Floating Arrow) */}
+      {showScrollBtn && (
+        <button
+          onClick={scrollToBottomManual}
+          className="absolute bottom-24 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition-transform hover:scale-110 active:scale-95 focus:outline-none"
+          aria-label="Scroll ke bawah"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 14l-7 7m0 0l-7-7m7 7V3"
+            />
+          </svg>
+        </button>
+      )}
 
       {/* Input Form */}
       <div className="border-t border-slate-800 bg-slate-900/80 px-4 py-4 backdrop-blur">
