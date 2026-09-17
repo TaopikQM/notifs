@@ -337,7 +337,7 @@ useEffect(() => {
   useEffect(() => {
     if (!userId || !chatPairData) return;
 
-    / 2. Cek apakah user TERKUNCI berdasarkan data Firebase
+    // 2. Cek apakah user TERKUNCI berdasarkan data Firebase
     const locked = isCurrentUserLocked(chatPairData, userId);
     
     // 3. Jika terkunci ATAU masih blocked lokal → JANGAN kirim API
