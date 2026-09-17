@@ -236,24 +236,24 @@ export default function ChatPage() {
   //   initPresence();
   // }, [userId]);
 
-  // // Set user online saat masuk halaman
-  // useEffect(() => {
-  //   if (!userId) return;
+  // Set user online saat masuk halaman
+  useEffect(() => {
+    if (!userId) return;
 
-  //   const initPresence = async () => {
-  //     await setUserOnline(userId);
-  //     const presence = await getUserPresence(userId);
-  //     setCurrentUserPresence(presence);
-  //   };
+    const initPresence = async () => {
+      await setUserOnline(userId);
+      const presence = await getUserPresence(userId);
+      setCurrentUserPresence(presence);
+    };
 
-  //   initPresence();
-  //   // Cleanup: Set offline saat keluar
-  //   return () => {
-  //     if (userId) {
-  //       setUserOffline(userId);
-  //     }
-  //   };
-  // }, [userId]);
+    initPresence();
+    // Cleanup: Set offline saat keluar
+    return () => {
+      if (userId) {
+        setUserOffline(userId);
+      }
+    };
+  }, [userId]);
 
    // Listen presence partner secara real-time
   useEffect(() => {
