@@ -176,59 +176,56 @@ export default function ChatPage() {
 
   //habis lock
 
-  // --- PERBAIKAN 1: Auto Scroll ke Bawah ---
-  const scrollToBottom = (force = false) => {
+   // --- PERBAIKAN: Auto Scroll ke Bawah saat Chat Dibuka ---
+  const [isInitialLoad, setIsInitialLoad] = useState(true); // Track apakah ini load pertama
+
+  const scrollToBottom = (behavior = "smooth") => {
     if (messagesEndRef.current) {
-      if (force) {
-        messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-      } else {
-        // Hanya scroll otomatis jika user sedang berada di posisi paling bawah
-        // agar tidak mengganggu user yang sedang membaca riwayat
-        const container = chatContainerRef.current;
-        if (container) {
-          const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-          if (isNearBottom) {
-            messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-          }
-        } else {
-           messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-        }
-      }
+      messagesEndRef.current.scrollIntoView({ behavior: behavior });
     }
   };
 
   useEffect(() => {
-    // Scroll otomatis saat pesan baru masuk atau chat pertama kali dimuat
-    scrollToBottom();
-  }, [messages, userId, otherUser]); // Tambahkan userId/otherUser untuk trigger saat chat awal
+    if (!userId || !otherUser) return;
 
-  // --- PERBAIKAN 2: Toggle Tombol Melayang (Floating Arrow) ---
-  const [showScrollBtn, setShowScrollBtn] = useState(false);
+    // Saat data chat mulai dimuat, set flag false agar tahu kapan loading selesai
+    setIsInitialLoad(true);
+  }, [userId, otherUser]);
 
-  const handleScroll = () => {
-    const container = chatContainerRef.current;
-    if (container) {
-      // Jika scroll lebih dari 200px dari atas, tampilkan tombol
-      if (container.scrollTop > 200) {
-        setShowScrollBtn(true);
-      } else {
-        setShowScrollBtn(false);
-      }
-    }
-  };
-
-  const scrollToBottomManual = () => {
-    scrollToBottom(true);
-    setShowScrollBtn(false);
-  };
-
-  // Event listener scroll
   useEffect(() => {
-    const container = chatContainerRef.current;
-    if (container) {
-      container.addEventListener('scroll', handleScroll);
-      return () => container.removeEventListener('scroll', handleScroll);
+    // Jika ada pesan baru atau saat load pertama kali selesai
+    if (messages.length > 0 && isInitialLoad) {
+      
+      // Gunakan setTimeout kecil untuk memastikan DOM sudah siap
+      const timer = setTimeout(() => {
+        scrollToBottom("auto"); // Langsung jump ke bawah tanpa animasi smooth saat awal
+        
+        // Setelah selesai scroll, matikan mode initial load
+        setIsInitialLoad(false); 
+      }, 100);
+
+      return () => clearTimeout(timer);
     }
+    
+    // Untuk pesan baru setelah chat terbuka, gunakan smooth scroll jika user sedang di bawah
+    if (messages.length > 0 && !isInitialLoad) {
+       const container = chatContainerRef.current;
+       if (container) {
+         const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+         if (isNearBottom) {
+           scrollToBottom("smooth");
+         }
+       }
+    }
+
+  }, [messages, isInitialLoad]);
+
+  // Tambahkan ini juga untuk memastikan saat component mount (pertama kali buka tab), posisi di bawah
+  useEffect(() => {
+     const timer = setTimeout(() => {
+        scrollToBottom("auto");
+     }, 500); // Delay sedikit lebih lama untuk kasus network lambat
+     return () => clearTimeout(timer);
   }, []);
   
   // // Auto scroll ke bawah
