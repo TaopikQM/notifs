@@ -148,34 +148,34 @@ useEffect(() => {
       return null;
     };
     
-    const handlePinSubmitU = (e) => {
-      e.preventDefault();
+    // const handlePinSubmitU = (e) => {
+    //   e.preventDefault();
       
-      if (!chatPairData) return;
+    //   if (!chatPairData) return;
     
-      const correctPin = getCurrentUserPin(chatPairData, userId);
+    //   const correctPin = getCurrentUserPin(chatPairData, userId);
     
-      if (pinInput === correctPin) {
-        setPinVerified(true);
-        setPinError("");
-        setPinInput("");
-      } else {
-        setPinError("PIN salah!");
-        setPinInput("");
-      }
-    };
-    useEffect(() => {
-      return () => {
-        setAttemptCount(0);
-        setIsBlocked(false);
-        setLockoutTime(null);
-        // setCountdown(60);
+    //   if (pinInput === correctPin) {
+    //     setPinVerified(true);
+    //     setPinError("");
+    //     setPinInput("");
+    //   } else {
+    //     setPinError("PIN salah!");
+    //     setPinInput("");
+    //   }
+    // };
+    // useEffect(() => {
+    //   return () => {
+    //     setAttemptCount(0);
+    //     setIsBlocked(false);
+    //     setLockoutTime(null);
+    //     // setCountdown(60);
         
-          setCountdown(LOCKOUT_DURATION);
-        setPinInput("");
-        setPinError("");
-      };
-    }, []);
+    //       setCountdown(LOCKOUT_DURATION);
+    //     setPinInput("");
+    //     setPinError("");
+    //   };
+    // }, []);
 
   
     const handlePinSubmit = (e) => {
@@ -335,7 +335,16 @@ useEffect(() => {
   
   // Set status online saat halaman dibuka
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !chatPairData) return;
+
+    / 2. Cek apakah user TERKUNCI berdasarkan data Firebase
+    const locked = isCurrentUserLocked(chatPairData, userId);
+    
+    // 3. Jika terkunci ATAU masih blocked lokal → JANGAN kirim API
+    if (locked || isBlocked) {
+      console.log("🔒 Terkunci - API update-status DILEWATI");
+      return;
+    }
 
     const setStatusOnline = async () => {
       try {
@@ -376,7 +385,7 @@ useEffect(() => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       handleBeforeUnload(); // Set offline saat unmount
     };
-  }, [userId]);
+  }, [userId , chatPairData, isBlocked]);
 
 // // 1. Cek apakah user ini yang harus memasukkan PIN
 //   const isUserLocked = (pairData, currentUserId) => {
