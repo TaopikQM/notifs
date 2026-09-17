@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import { ref, get, set, push, onValue, off, update, database } from "../lib/firebase";
+import { ref, get, set, push, onValue, off, update, database } from "../../lib/firebase";
 import { getChatPairKey, formatLastSeen,  setUserOnline,
   setUserOffline,
   getUserPresence, 
-  startHeartbeat, } from "../lib/firebase";
+  startHeartbeat, } from "../../lib/firebase";
 
 export default function ChatPage() {
   const router = useRouter();
