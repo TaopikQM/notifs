@@ -1215,55 +1215,51 @@ Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-fl
         </div>
       </div>
 
-      {/* Messages Container */}
-      <div   ref={chatContainerRef} 
-          onScroll={handleScroll}  className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-        {messages.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-slate-400">
-            <p>Mulai percakapan dengan {otherUser}</p>
-          </div>
-        ) : (
-          messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${msg.sender === userId ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`max-w-xs rounded-lg px-4 py-2 ${
-                  msg.sender === userId
-                    ? "bg-indigo-600 text-white"
-                    : "bg-slate-800 text-slate-100"
-                }`}
-              >
-                <p className="break-words">{msg.message}</p>
-               
-                  <p className="mt-1 text-xs opacity-70">
-                    {new Date(msg.timestamp).toLocaleString('id-ID', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit',
-                      hour12: false
-                    }).replace(/\//g, '-')} {msg.sender === userId &&
-                      (msg.isRead ? (
-                        <span className="text-[10px] text-emerald-300">✓✓</span>
-                      ) : (
-                        <span className="text-[10px] text-slate-300">✓</span>
-                    ))}
-                  </p>
-                   
-              </div>
-            </div>
-          ))
-        )}
-        {/* Anchor point untuk scroll */}
-          <div ref={messagesEndRef} />
-      </div>
 
-{/* Tombol Melayang (Floating Arrow) */}
-     {/* Tombol Melayang (Floating Arrow) */}
+ {/* WRAPPER RELATIVE: Penting untuk posisi absolute tombol */}
+      <div className="relative flex-1 overflow-hidden">
+        
+        {/* Messages Container */}
+        <div   
+          ref={chatContainerRef} 
+          onScroll={handleScroll} // <-- PAKAI INI, BUKAN addEventListener
+          className="h-full overflow-y-auto px-4 py-4 space-y-3"
+        >
+          {messages.length === 0 ? (
+            <div className="flex h-full items-center justify-center text-slate-400">
+              <p>Mulai percakapan dengan {otherUser}</p>
+            </div>
+          ) : (
+            messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex ${msg.sender === userId ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-xs rounded-lg px-4 py-2 shadow-sm ${
+                    msg.sender === userId
+                      ? "bg-indigo-600 text-white"
+                      : "bg-slate-800 text-slate-100"
+                  }`}
+                >
+                  <p className="break-words">{msg.message}</p>
+                  <p className="mt-1 text-xs opacity-70 flex items-center gap-1">
+                    {new Date(msg.timestamp).toLocaleTimeString('id-ID')} 
+                    {msg.sender === userId && (
+                      <span className="text-[10px] ml-1">
+                        {msg.isRead ? "✓✓" : "✓"}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
+          
+          {/* Anchor point untuk scroll */}
+          <div ref={messagesEndRef} />
+        </div>
+
         {/* Floating Button */}
         {showScrollBtn && (
           <button
@@ -1274,6 +1270,7 @@ Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-fl
             ↓
           </button>
         )}
+      </div>
 
       {/* Input Form */}
       <div className="border-t border-slate-800 bg-slate-900/80 px-4 py-4 backdrop-blur">
