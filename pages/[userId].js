@@ -699,74 +699,74 @@ useEffect(() => {
 //     findPartner();
 //   }, [userId]);
 
-//   // Fetch chat pair data untuk cek lock & pin
-// useEffect(() => {
-//   if (!userId || !otherUser) return;
+  // Fetch chat pair data untuk cek lock & pin
+useEffect(() => {
+  if (!userId || !otherUser) return;
 
-//   const chatPairKey = getChatPairKey(userId, otherUser);
-//   const chatPairRef = ref(database, `chat-pairs/${chatPairKey}`);
+  const chatPairKey = getChatPairKey(userId, otherUser);
+  const chatPairRef = ref(database, `chat-pairs/${chatPairKey}`);
 
-//   const unsubscribe = onValue(chatPairRef, (snapshot) => {
-//     if (snapshot.exists()) {
-//       const data = snapshot.val();
-//       setChatPairData(data);
+  const unsubscribe = onValue(chatPairRef, (snapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      setChatPairData(data);
 
-//       // Cek apakah user saat ini terkunci
-//       const locked = isCurrentUserLocked(data, userId);
-//       setIsLocked(locked);
+      // Cek apakah user saat ini terkunci
+      const locked = isCurrentUserLocked(data, userId);
+      setIsLocked(locked);
       
-//       // Jika tidak terkunci, langsung verifikasi
-//       if (!locked) {
-//         setPinVerified(true);
-//       }
-//     }
-//   });
-
-//   return () => off(chatPairRef, "value", unsubscribe);
-// }, [userId, otherUser]);
-
-
-
-  useEffect(() => {
-    if (!userId) return;
-
-    // Cari Partner
-    const findPartner = () => {
-      const indexRef = ref(database, `user-chat-index/${userId}`);
-      const unsub = onValue(indexRef, (snapshot) => {
-        if (snapshot.exists()) {
-          const chatPairs = snapshot.val();
-          const partner = Object.keys(chatPairs)[0]; 
-          setOtherUser(partner);
-        } else {
-          setOtherUser(null);
-        }
-        setLoading((prev) => prev ? false : prev); // Set loading false jika baru pertama
-      });
-      return unsub;
-    };
-
-    // Load Chat Pair Data (untuk cek lock)
-    let unsubChatPair = null;
-    if (userId && otherUser) {
-      const chatPairKey = getChatPairKey(userId, otherUser);
-      const chatPairRef = ref(database, `chat-pairs/${chatPairKey}`);
-      
-      unsubChatPair = onValue(chatPairRef, (snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          setChatPairData(data);
-          const locked = isCurrentUserLocked(data, userId);
-          setIsLocked(locked);
-          if (!locked) setPinVerified(true);
-        }
-      });
+      // Jika tidak terkunci, langsung verifikasi
+      if (!locked) {
+        setPinVerified(true);
+      }
     }
+  });
 
-    return () => {
-      // Cleanup sederhana (untuk prod, simpan function di ref)
-    };
-  }, [userId, otherUser]);
+  return () => off(chatPairRef, "value", unsubscribe);
+}, [userId, otherUser]);
+
+
+
+  // useEffect(() => {
+  //   if (!userId) return;
+
+  //   // Cari Partner
+  //   const findPartner = () => {
+  //     const indexRef = ref(database, `user-chat-index/${userId}`);
+  //     const unsub = onValue(indexRef, (snapshot) => {
+  //       if (snapshot.exists()) {
+  //         const chatPairs = snapshot.val();
+  //         const partner = Object.keys(chatPairs)[0]; 
+  //         setOtherUser(partner);
+  //       } else {
+  //         setOtherUser(null);
+  //       }
+  //       setLoading((prev) => prev ? false : prev); // Set loading false jika baru pertama
+  //     });
+  //     return unsub;
+  //   };
+
+  //   // Load Chat Pair Data (untuk cek lock)
+  //   let unsubChatPair = null;
+  //   if (userId && otherUser) {
+  //     const chatPairKey = getChatPairKey(userId, otherUser);
+  //     const chatPairRef = ref(database, `chat-pairs/${chatPairKey}`);
+      
+  //     unsubChatPair = onValue(chatPairRef, (snapshot) => {
+  //       if (snapshot.exists()) {
+  //         const data = snapshot.val();
+  //         setChatPairData(data);
+  //         const locked = isCurrentUserLocked(data, userId);
+  //         setIsLocked(locked);
+  //         if (!locked) setPinVerified(true);
+  //       }
+  //     });
+  //   }
+
+  //   return () => {
+  //     // Cleanup sederhana (untuk prod, simpan function di ref)
+  //   };
+  // }, [userId, otherUser]);
 
 
 
@@ -790,18 +790,18 @@ useEffect(() => {
         setMessages(msgArray.sort((a, b) => a.timestamp - b.timestamp));
       }
 
-      else {
-        setMessages([]);
-      }
+// else {
+//         setMessages([]);
+//       }      
 
 
       
     });
 
-  //   return () => off(messagesRef, "value", unsubscribe);
-  // }, [userId, otherUser]);
-    return () => unsub();
-  }, [userId, otherUser, pinVerified]);
+    return () => off(messagesRef, "value", unsubscribe);
+  }, [userId, otherUser]);
+  //   return () => unsub();
+  // }, [userId, otherUser, pinVerified]);
 
 
 
