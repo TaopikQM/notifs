@@ -233,63 +233,57 @@ useEffect(() => {
 
 
 
+
+
+
+  
+
+
+
+
 // --- 1. LOGIKA SCROLL OTOMATIS (AMAN) ---
-  const scrollToBottom = (force = false) => {
-    if (messagesEndRef.current && chatContainerRef.current) {
-      if (force) {
-        messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-      } else {
-        // Hanya scroll jika user sedang di posisi paling bawah
-        const container = chatContainerRef.current;
-        const { scrollTop, scrollHeight, clientHeight } = container;
-        // Jika jarak dari bawah < 100px, anggap user sedang membaca yang baru
-        const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-        
-        if (isNearBottom) {
-          messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-        }
-      }
+ // 1. Scroll ke bawah secara manual/force
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
     }
   };
 
-  // Trigger scroll otomatis hanya saat pesan bertambah atau chat pertama kali dimuat
+  // 2. Auto scroll saat pesan baru masuk
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, userId, otherUser]); // Dependencies penting untuk mencegah loop
+    // Jika loading selesai dan ada pesan, langsung ke bawah tanpa animasi smooth dulu
+    // agar user tidak melihat lompatan aneh saat load awal
+    if (!loading && messages.length > 0) {
+       if (messagesEndRef.current) {
+         messagesEndRef.current.scrollIntoView({ behavior: "auto", block: "end" });
+       }
+    }
+  }, [messages, loading]);
 
-  // --- 2. LOGIKA TOMBOL Melayang (FLOATING ARROW) ---
-  const handleScroll = () => {
-    if (!chatContainerRef.current) return;
+  // 3. Handle Scroll Event (Untuk Tombol)
+  // Kita gunakan fungsi ini langsung di JSX via onScroll agar lebih reliable
+  const handleScroll = (e) => {
+    const container = e.target; // Ambil element dari event
+    if (!container) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
     
-    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
-    
-    // Tampilkan tombol jika user scroll ke atas (lebih dari 100px dari posisi paling bawah)
-    // atau jika scroll position > 200px dari atas (opsional, tapi logika di atas lebih umum)
+    // Jarak dari dasar (bottom)
     const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    
-    if (distanceFromBottom > 100) {
+
+    // Tampilkan tombol jika jarak dari bawah > 150px
+    if (distanceFromBottom > 150) {
       setShowScrollBtn(true);
     } else {
       setShowScrollBtn(false);
     }
   };
 
-  const handleScrollToBottom = () => {
-    scrollToBottom(true); // Force scroll
-    setShowScrollBtn(false); // Sembunyikan tombol setelah scroll
+  // Klik tombol floating
+  const handleScrollToBottomClick = () => {
+    scrollToBottom();
+    setShowScrollBtn(false);
   };
-
-  // Pasang listener scroll pada container
-  useEffect(() => {
-    const container = chatContainerRef.current;
-    if (container) {
-      container.addEventListener('scroll', handleScroll);
-      // Bersihkan listener saat unmount
-      return () => {
-        container.removeEventListener('scroll', handleScroll);
-      };
-    }
-  }, []); // Empty array agar hanya dipasang sekali
 
 
   //habis lock
@@ -1222,7 +1216,8 @@ Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-fl
       </div>
 
       {/* Messages Container */}
-      <div   ref={chatContainerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      <div   ref={chatContainerRef} 
+          onScroll={handleScroll}  className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.length === 0 ? (
           <div className="flex h-full items-center justify-center text-slate-400">
             <p>Mulai percakapan dengan {otherUser}</p>
@@ -1263,20 +1258,22 @@ Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-fl
             </div>
           ))
         )}
-        <div ref={messagesEndRef} />
+        {/* Anchor point untuk scroll */}
+          <div ref={messagesEndRef} />
       </div>
 
 {/* Tombol Melayang (Floating Arrow) */}
      {/* Tombol Melayang (Floating Arrow) */}
-      {showScrollBtn && (
-        <button
-          onClick={handleScrollToBottom}
-          className="absolute bottom-24 right-4 bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-full shadow-lg transition-transform hover:scale-110 focus:outline-none z-10"
-          aria-label="Kembali ke bawah"
-        >
-          ↓
-        </button>
-      )}
+        {/* Floating Button */}
+        {showScrollBtn && (
+          <button
+            onClick={handleScrollToBottomClick}
+            className="absolute bottom-6 right-6 w-10 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 focus:outline-none z-20"
+            aria-label="Kembali ke bawah"
+          >
+            ↓
+          </button>
+        )}
 
       {/* Input Form */}
       <div className="border-t border-slate-800 bg-slate-900/80 px-4 py-4 backdrop-blur">
