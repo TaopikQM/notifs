@@ -33,10 +33,14 @@ export default function ChatPage() {
   const [otherUserStatus, setOtherUserStatus] = useState(null);//ini gagal offline
   const messagesEndRef = useRef(null);
   const heartbeatRef = useRef(null);
+  
+  const chatContainerRef = useRef(null);
+   const unsubscribeRef = useRef(null); // Untuk menyimpan listener
 
-   const chatContainerRef = useRef(null); // Ref untuk container scroll
 
- 
+  // --- Floating Button State ---
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
+  
 
   const LOCKOUT_KEY = "pin_lockout_time";
   const LOCKOUT_DURATION = 60; // 1 menit dalam detik
@@ -229,60 +233,64 @@ useEffect(() => {
 
 
 
-// --- PERBAIKAN 1: Auto Scroll ke Bawah ---
+// --- 1. LOGIKA SCROLL OTOMATIS (AMAN) ---
   const scrollToBottom = (force = false) => {
-    if (messagesEndRef.current) {
+    if (messagesEndRef.current && chatContainerRef.current) {
       if (force) {
         messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
       } else {
-        // Hanya scroll otomatis jika user sedang berada di posisi paling bawah
-        // agar tidak mengganggu user yang sedang membaca riwayat
+        // Hanya scroll jika user sedang di posisi paling bawah
         const container = chatContainerRef.current;
-        if (container) {
-          const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-          if (isNearBottom) {
-            messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-          }
-        } else {
-           messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+        const { scrollTop, scrollHeight, clientHeight } = container;
+        // Jika jarak dari bawah < 100px, anggap user sedang membaca yang baru
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+        
+        if (isNearBottom) {
+          messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
         }
       }
     }
   };
 
+  // Trigger scroll otomatis hanya saat pesan bertambah atau chat pertama kali dimuat
   useEffect(() => {
-    // Scroll otomatis saat pesan baru masuk atau chat pertama kali dimuat
     scrollToBottom();
-  }, [messages, userId, otherUser]); // Tambahkan userId/otherUser untuk trigger saat chat awal
+  }, [messages, userId, otherUser]); // Dependencies penting untuk mencegah loop
 
-  // --- PERBAIKAN 2: Toggle Tombol Melayang (Floating Arrow) ---
-  const [showScrollBtn, setShowScrollBtn] = useState(false);
-
+  // --- 2. LOGIKA TOMBOL Melayang (FLOATING ARROW) ---
   const handleScroll = () => {
-    const container = chatContainerRef.current;
-    if (container) {
-      // Jika scroll lebih dari 200px dari atas, tampilkan tombol
-      if (container.scrollTop > 200) {
-        setShowScrollBtn(true);
-      } else {
-        setShowScrollBtn(false);
-      }
+    if (!chatContainerRef.current) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    
+    // Tampilkan tombol jika user scroll ke atas (lebih dari 100px dari posisi paling bawah)
+    // atau jika scroll position > 200px dari atas (opsional, tapi logika di atas lebih umum)
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    
+    if (distanceFromBottom > 100) {
+      setShowScrollBtn(true);
+    } else {
+      setShowScrollBtn(false);
     }
   };
 
-  const scrollToBottomManual = () => {
-    scrollToBottom(true);
-    setShowScrollBtn(false);
+  const handleScrollToBottom = () => {
+    scrollToBottom(true); // Force scroll
+    setShowScrollBtn(false); // Sembunyikan tombol setelah scroll
   };
 
-  // Event listener scroll
+  // Pasang listener scroll pada container
   useEffect(() => {
     const container = chatContainerRef.current;
     if (container) {
       container.addEventListener('scroll', handleScroll);
-      return () => container.removeEventListener('scroll', handleScroll);
+      // Bersihkan listener saat unmount
+      return () => {
+        container.removeEventListener('scroll', handleScroll);
+      };
     }
-  }, []);
+  }, []); // Empty array agar hanya dipasang sekali
+
 
   //habis lock
   
@@ -1214,7 +1222,7 @@ Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-fl
       </div>
 
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      <div   ref={chatContainerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.length === 0 ? (
           <div className="flex h-full items-center justify-center text-slate-400">
             <p>Mulai percakapan dengan {otherUser}</p>
@@ -1259,26 +1267,14 @@ Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-fl
       </div>
 
 {/* Tombol Melayang (Floating Arrow) */}
+     {/* Tombol Melayang (Floating Arrow) */}
       {showScrollBtn && (
         <button
-          onClick={scrollToBottomManual}
-          className="absolute bottom-24 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition-transform hover:scale-110 active:scale-95 focus:outline-none"
-          aria-label="Scroll ke bawah"
+          onClick={handleScrollToBottom}
+          className="absolute bottom-24 right-4 bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-full shadow-lg transition-transform hover:scale-110 focus:outline-none z-10"
+          aria-label="Kembali ke bawah"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 14l-7 7m0 0l-7-7m7 7V3"
-            />
-          </svg>
+          ↓
         </button>
       )}
 
