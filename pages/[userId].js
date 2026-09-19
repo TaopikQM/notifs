@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useRouter } from "next/router";
 import { ref, get, set, push, onValue, off, update, database } from "../lib/firebase";
 import { getChatPairKey, formatLastSeen,  setUserOnline,
