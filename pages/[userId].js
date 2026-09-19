@@ -34,12 +34,12 @@ export default function ChatPage() {
   const messagesEndRef = useRef(null);
   const heartbeatRef = useRef(null);
   
-  const chatContainerRef = useRef(null);
-   const unsubscribeRef = useRef(null); // Untuk menyimpan listener
+  // const chatContainerRef = useRef(null);
+  //  const unsubscribeRef = useRef(null); // Untuk menyimpan listener
 
 
-  // --- Floating Button State ---
-  const [showScrollBtn, setShowScrollBtn] = useState(false);
+  // // --- Floating Button State ---
+  // const [showScrollBtn, setShowScrollBtn] = useState(false);
   
 
   const LOCKOUT_KEY = "pin_lockout_time";
@@ -241,33 +241,33 @@ useEffect(() => {
 
 
 
-// --- 1. LOGIKA SCROLL OTOMATIS (AMAN) ---
- // 1. Scroll ke bawah secara manual/force
-   const scrollToBottom = (force = false) => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: force ? "instant" : "smooth", block: "end" });
-    }
-  };
+// // --- 1. LOGIKA SCROLL OTOMATIS (AMAN) ---
+//  // 1. Scroll ke bawah secara manual/force
+//    const scrollToBottom = (force = false) => {
+//     if (messagesEndRef.current) {
+//       messagesEndRef.current.scrollIntoView({ behavior: force ? "instant" : "smooth", block: "end" });
+//     }
+//   };
 
-  const handleScroll = (e) => {
-    const container = e.target;
-    if (!container) return;
+//   const handleScroll = (e) => {
+//     const container = e.target;
+//     if (!container) return;
 
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+//     const { scrollTop, scrollHeight, clientHeight } = container;
+//     const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
 
-    // Tampilkan tombol jika user scroll ke atas > 150px dari bawah
-    if (distanceFromBottom > 150) {
-      setShowScrollBtn(true);
-    } else {
-      setShowScrollBtn(false);
-    }
-  };
+//     // Tampilkan tombol jika user scroll ke atas > 150px dari bawah
+//     if (distanceFromBottom > 150) {
+//       setShowScrollBtn(true);
+//     } else {
+//       setShowScrollBtn(false);
+//     }
+//   };
 
-  const handleScrollToBottomClick = () => {
-    scrollToBottom(true);
-    setShowScrollBtn(false);
-  };
+//   const handleScrollToBottomClick = () => {
+//     scrollToBottom(true);
+//     setShowScrollBtn(false);
+//   };
 
 
   //habis lock
@@ -811,13 +811,13 @@ useEffect(() => {
   
 
 // --- 3. SCROLL OTOMATIS SAAT PESAN MASUK ---
-  useLayoutEffect(() => {
-    // Gunakan useLayoutEffect agar scroll terjadi sebelum browser repaint
-    if (messages.length > 0 && messagesEndRef.current) {
-      // Scroll ke bawah secara instan agar tidak ada lompatan yang aneh
-      scrollToBottom(true); 
-    }
-  }, [messages]);
+  // useLayoutEffect(() => {
+  //   // Gunakan useLayoutEffect agar scroll terjadi sebelum browser repaint
+  //   if (messages.length > 0 && messagesEndRef.current) {
+  //     // Scroll ke bawah secara instan agar tidak ada lompatan yang aneh
+  //     scrollToBottom(true); 
+  //   }
+  // }, [messages]);
 
 
 
@@ -1286,60 +1286,56 @@ Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-fl
 
 
 
-
-
-
-
-
-
-
-
-
- {/* WRAPPER RELATIVE: Penting untuk posisi absolute tombol */}
-      <div className="relative flex-1 overflow-hidden">
-        
-        {/* Messages Container */}
-        <div   
-          ref={chatContainerRef} 
-          onScroll={handleScroll} // <-- PAKAI INI, BUKAN addEventListener
-          className="h-full overflow-y-auto px-4 py-4 space-y-3"
-        >
-          {messages.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-slate-400">
-              <p>Mulai percakapan dengan {otherUser}</p>
-            </div>
-          ) : (
-            messages.map((msg) => (
+      {/* Messages Container  ref={chatContainerRef}
+        onScroll={handleScroll}*/}
+      <div     className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        {messages.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-slate-400">
+            <p>Mulai percakapan dengan {otherUser}</p>
+          </div>
+        ) : (
+          messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`flex ${msg.sender === userId ? "justify-end" : "justify-start"}`}
+            >
               <div
-                key={msg.id}
-                className={`flex ${msg.sender === userId ? "justify-end" : "justify-start"}`}
+                className={`max-w-xs rounded-lg px-4 py-2 ${
+                  msg.sender === userId
+                    ? "bg-indigo-600 text-white"
+                    : "bg-slate-800 text-slate-100"
+                }`}
               >
-                <div
-                  className={`max-w-xs rounded-lg px-4 py-2 shadow-sm ${
-                    msg.sender === userId
-                      ? "bg-indigo-600 text-white"
-                      : "bg-slate-800 text-slate-100"
-                  }`}
-                >
-                  <p className="break-words">{msg.message}</p>
-                  <p className="mt-1 text-xs opacity-70 flex items-center gap-1">
-                    {new Date(msg.timestamp).toLocaleTimeString('id-ID')} 
-                    {msg.sender === userId && (
-                      <span className="text-[10px] ml-1">
-                        {msg.isRead ? "✓✓" : "✓"}
-                      </span>
-                    )}
+                <p className="break-words">{msg.message}</p>
+               
+                  <p className="mt-1 text-xs opacity-70">
+                    {new Date(msg.timestamp).toLocaleString('id-ID', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      hour12: false
+                    }).replace(/\//g, '-')} {msg.sender === userId &&
+                      (msg.isRead ? (
+                        <span className="text-[10px] text-emerald-300">✓✓</span>
+                      ) : (
+                        <span className="text-[10px] text-slate-300">✓</span>
+                    ))}
                   </p>
-                </div>
+                   
               </div>
-            ))
-          )}
-          
-          {/* Anchor point untuk scroll */}
-          <div ref={messagesEndRef} />
-        </div>
+            </div>
+          ))
+        )}
+        {/* Anchor point untuk scroll
+          <div ref={messagesEndRef} /> */}
+      </div>
 
-        {/* Floating Button */}
+{/* Tombol Melayang (Floating Arrow) */}
+     {/* Tombol Melayang (Floating Arrow) */}
+        {/* Floating Button
         {showScrollBtn && (
           <button
             onClick={handleScrollToBottomClick}
@@ -1349,7 +1345,17 @@ Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-fl
             ↓
           </button>
         )}
-      </div>
+ */}
+
+
+
+
+
+
+
+
+
+
 
       {/* Input Form */}
       <div className="border-t border-slate-800 bg-slate-900/80 px-4 py-4 backdrop-blur">
@@ -1374,6 +1380,72 @@ Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-fl
     </div>
   );
 }
+
+
+
+
+
+
+
+ // {/* WRAPPER RELATIVE: Penting untuk posisi absolute tombol */}
+ //      <div className="relative flex-1 overflow-hidden">
+        
+ //        {/* Messages Container */}
+ //        <div   
+ //          ref={chatContainerRef} 
+ //          onScroll={handleScroll} // <-- PAKAI INI, BUKAN addEventListener
+ //          className="h-full overflow-y-auto px-4 py-4 space-y-3"
+ //        >
+ //          {messages.length === 0 ? (
+ //            <div className="flex h-full items-center justify-center text-slate-400">
+ //              <p>Mulai percakapan dengan {otherUser}</p>
+ //            </div>
+ //          ) : (
+ //            messages.map((msg) => (
+ //              <div
+ //                key={msg.id}
+ //                className={`flex ${msg.sender === userId ? "justify-end" : "justify-start"}`}
+ //              >
+ //                <div
+ //                  className={`max-w-xs rounded-lg px-4 py-2 shadow-sm ${
+ //                    msg.sender === userId
+ //                      ? "bg-indigo-600 text-white"
+ //                      : "bg-slate-800 text-slate-100"
+ //                  }`}
+ //                >
+ //                  <p className="break-words">{msg.message}</p>
+ //                  <p className="mt-1 text-xs opacity-70 flex items-center gap-1">
+ //                    {new Date(msg.timestamp).toLocaleTimeString('id-ID')} 
+ //                    {msg.sender === userId && (
+ //                      <span className="text-[10px] ml-1">
+ //                        {msg.isRead ? "✓✓" : "✓"}
+ //                      </span>
+ //                    )}
+ //                  </p>
+ //                </div>
+ //              </div>
+ //            ))
+ //          )}
+          
+ //          {/* Anchor point untuk scroll */}
+ //          <div ref={messagesEndRef} />
+ //        </div>
+
+ //        {/* Floating Button */}
+ //        {showScrollBtn && (
+ //          <button
+ //            onClick={handleScrollToBottomClick}
+ //            className="absolute bottom-6 right-6 w-10 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 focus:outline-none z-20"
+ //            aria-label="Kembali ke bawah"
+ //          >
+ //            ↓
+ //          </button>
+ //        )}
+ //      </div>
+
+
+
+
 
 
 
