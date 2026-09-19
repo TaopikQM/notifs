@@ -1444,7 +1444,6 @@ Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-fl
           <input
             type="text"
             value={messageInput}
-            {/* onChange={(e) => setMessageInput(e.target.value)} */}
             onChange={handleInputChange}
             placeholder="Tulis pesan..."
             disabled={sending}
@@ -1466,6 +1465,7 @@ Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-fl
 
 
 
+            // {/* onChange={(e) => setMessageInput(e.target.value)} */}
 
 
 
