@@ -243,35 +243,20 @@ useEffect(() => {
 
 // --- 1. LOGIKA SCROLL OTOMATIS (AMAN) ---
  // 1. Scroll ke bawah secara manual/force
-  const scrollToBottom = () => {
+   const scrollToBottom = (force = false) => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+      messagesEndRef.current.scrollIntoView({ behavior: force ? "instant" : "smooth", block: "end" });
     }
   };
 
-  // 2. Auto scroll saat pesan baru masuk
-  useEffect(() => {
-    // Jika loading selesai dan ada pesan, langsung ke bawah tanpa animasi smooth dulu
-    // agar user tidak melihat lompatan aneh saat load awal
-    if (!loading && messages.length > 0) {
-       if (messagesEndRef.current) {
-         messagesEndRef.current.scrollIntoView({ behavior: "auto", block: "end" });
-       }
-    }
-  }, [messages, loading]);
-
-  // 3. Handle Scroll Event (Untuk Tombol)
-  // Kita gunakan fungsi ini langsung di JSX via onScroll agar lebih reliable
   const handleScroll = (e) => {
-    const container = e.target; // Ambil element dari event
+    const container = e.target;
     if (!container) return;
 
     const { scrollTop, scrollHeight, clientHeight } = container;
-    
-    // Jarak dari dasar (bottom)
     const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
 
-    // Tampilkan tombol jika jarak dari bawah > 150px
+    // Tampilkan tombol jika user scroll ke atas > 150px dari bawah
     if (distanceFromBottom > 150) {
       setShowScrollBtn(true);
     } else {
@@ -279,9 +264,8 @@ useEffect(() => {
     }
   };
 
-  // Klik tombol floating
   const handleScrollToBottomClick = () => {
-    scrollToBottom();
+    scrollToBottom(true);
     setShowScrollBtn(false);
   };
 
@@ -690,56 +674,104 @@ useEffect(() => {
   // };
   
   // Cari partner chat user
+//   useEffect(() => {
+//     if (!userId) return;
+
+//     const findPartner = async () => {
+//       try {
+//         const indexRef = ref(database, `user-chat-index/${userId}`);
+//         onValue(indexRef, (snapshot) => {
+//           if (snapshot.exists()) {
+//             const chatPairs = snapshot.val();
+//             const partner = Object.keys(chatPairs)[0]; // Ambil partner pertama
+//             setOtherUser(partner);
+//           } else {
+//             setOtherUser(null);
+//           }
+//           setLoading(false);
+//         });
+//       } catch (err) {
+//         console.error("Error finding partner:", err);
+//         setLoading(false);
+//       }
+//     };
+
+//     findPartner();
+//   }, [userId]);
+
+//   // Fetch chat pair data untuk cek lock & pin
+// useEffect(() => {
+//   if (!userId || !otherUser) return;
+
+//   const chatPairKey = getChatPairKey(userId, otherUser);
+//   const chatPairRef = ref(database, `chat-pairs/${chatPairKey}`);
+
+//   const unsubscribe = onValue(chatPairRef, (snapshot) => {
+//     if (snapshot.exists()) {
+//       const data = snapshot.val();
+//       setChatPairData(data);
+
+//       // Cek apakah user saat ini terkunci
+//       const locked = isCurrentUserLocked(data, userId);
+//       setIsLocked(locked);
+      
+//       // Jika tidak terkunci, langsung verifikasi
+//       if (!locked) {
+//         setPinVerified(true);
+//       }
+//     }
+//   });
+
+//   return () => off(chatPairRef, "value", unsubscribe);
+// }, [userId, otherUser]);
+
+
+
   useEffect(() => {
     if (!userId) return;
 
-    const findPartner = async () => {
-      try {
-        const indexRef = ref(database, `user-chat-index/${userId}`);
-        onValue(indexRef, (snapshot) => {
-          if (snapshot.exists()) {
-            const chatPairs = snapshot.val();
-            const partner = Object.keys(chatPairs)[0]; // Ambil partner pertama
-            setOtherUser(partner);
-          } else {
-            setOtherUser(null);
-          }
-          setLoading(false);
-        });
-      } catch (err) {
-        console.error("Error finding partner:", err);
-        setLoading(false);
-      }
+    // Cari Partner
+    const findPartner = () => {
+      const indexRef = ref(database, `user-chat-index/${userId}`);
+      const unsub = onValue(indexRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const chatPairs = snapshot.val();
+          const partner = Object.keys(chatPairs)[0]; 
+          setOtherUser(partner);
+        } else {
+          setOtherUser(null);
+        }
+        setLoading((prev) => prev ? false : prev); // Set loading false jika baru pertama
+      });
+      return unsub;
     };
 
-    findPartner();
-  }, [userId]);
-
-  // Fetch chat pair data untuk cek lock & pin
-useEffect(() => {
-  if (!userId || !otherUser) return;
-
-  const chatPairKey = getChatPairKey(userId, otherUser);
-  const chatPairRef = ref(database, `chat-pairs/${chatPairKey}`);
-
-  const unsubscribe = onValue(chatPairRef, (snapshot) => {
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      setChatPairData(data);
-
-      // Cek apakah user saat ini terkunci
-      const locked = isCurrentUserLocked(data, userId);
-      setIsLocked(locked);
+    // Load Chat Pair Data (untuk cek lock)
+    let unsubChatPair = null;
+    if (userId && otherUser) {
+      const chatPairKey = getChatPairKey(userId, otherUser);
+      const chatPairRef = ref(database, `chat-pairs/${chatPairKey}`);
       
-      // Jika tidak terkunci, langsung verifikasi
-      if (!locked) {
-        setPinVerified(true);
-      }
+      unsubChatPair = onValue(chatPairRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          setChatPairData(data);
+          const locked = isCurrentUserLocked(data, userId);
+          setIsLocked(locked);
+          if (!locked) setPinVerified(true);
+        }
+      });
     }
-  });
 
-  return () => off(chatPairRef, "value", unsubscribe);
-}, [userId, otherUser]);
+    return () => {
+      // Cleanup sederhana (untuk prod, simpan function di ref)
+    };
+  }, [userId, otherUser]);
+
+
+
+
+  
 
   // Real-time listen pesan
   useEffect(() => {
@@ -757,10 +789,46 @@ useEffect(() => {
         }));
         setMessages(msgArray.sort((a, b) => a.timestamp - b.timestamp));
       }
+
+      else {
+        setMessages([]);
+      }
+
+
+      
     });
 
-    return () => off(messagesRef, "value", unsubscribe);
-  }, [userId, otherUser]);
+  //   return () => off(messagesRef, "value", unsubscribe);
+  // }, [userId, otherUser]);
+    return () => unsub();
+  }, [userId, otherUser, pinVerified]);
+
+
+
+
+
+
+  
+
+// --- 3. SCROLL OTOMATIS SAAT PESAN MASUK ---
+  useLayoutEffect(() => {
+    // Gunakan useLayoutEffect agar scroll terjadi sebelum browser repaint
+    if (messages.length > 0 && messagesEndRef.current) {
+      // Scroll ke bawah secara instan agar tidak ada lompatan yang aneh
+      scrollToBottom(true); 
+    }
+  }, [messages]);
+
+
+
+
+
+
+
+
+
+  
+  
 
   // Tandai semua pesan dari partner sebagai sudah dibaca
   useEffect(() => {
@@ -1214,6 +1282,79 @@ Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-fl
           </div>
         </div>
       </div>
+
+
+
+
+
+
+      {/* Messages Container */}
+      <div    ref={chatContainerRef}
+        onScroll={handleScroll}  className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        {messages.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-slate-400">
+            <p>Mulai percakapan dengan {otherUser}</p>
+          </div>
+        ) : (
+          messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`flex ${msg.sender === userId ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`max-w-xs rounded-lg px-4 py-2 ${
+                  msg.sender === userId
+                    ? "bg-indigo-600 text-white"
+                    : "bg-slate-800 text-slate-100"
+                }`}
+              >
+                <p className="break-words">{msg.message}</p>
+               
+                  <p className="mt-1 text-xs opacity-70">
+                    {new Date(msg.timestamp).toLocaleString('id-ID', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      hour12: false
+                    }).replace(/\//g, '-')} {msg.sender === userId &&
+                      (msg.isRead ? (
+                        <span className="text-[10px] text-emerald-300">✓✓</span>
+                      ) : (
+                        <span className="text-[10px] text-slate-300">✓</span>
+                    ))}
+                  </p>
+                   
+              </div>
+            </div>
+          ))
+        )}
+        {/* Anchor point untuk scroll */}
+          <div ref={messagesEndRef} />
+      </div>
+
+{/* Tombol Melayang (Floating Arrow) */}
+     {/* Tombol Melayang (Floating Arrow) */}
+        {/* Floating Button */}
+        {showScrollBtn && (
+          <button
+            onClick={handleScrollToBottomClick}
+            className="absolute bottom-6 right-6 w-10 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 focus:outline-none z-20"
+            aria-label="Kembali ke bawah"
+          >
+            ↓
+          </button>
+        )}
+
+
+
+
+
+
+
+
 
 
  {/* WRAPPER RELATIVE: Penting untuk posisi absolute tombol */}
