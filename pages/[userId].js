@@ -9,6 +9,8 @@ import { getChatPairKey, formatLastSeen,  setUserOnline,
 export default function ChatPage() {
   const router = useRouter();
   const { userId } = router.query;
+
+  
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState("");
   const [loading, setLoading] = useState(true);
@@ -33,6 +35,12 @@ export default function ChatPage() {
   const [otherUserStatus, setOtherUserStatus] = useState(null);//ini gagal offline
   const messagesEndRef = useRef(null);
   const heartbeatRef = useRef(null);
+
+
+   // --- STATE TYPING INDICATOR ---
+  const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
+  const typingTimeoutRef = useRef(null); // Ref untuk timer
+
   
   // const chatContainerRef = useRef(null);
   //  const unsubscribeRef = useRef(null); // Untuk menyimpan listener
@@ -233,6 +241,63 @@ useEffect(() => {
 
 
 
+
+
+
+  // --- LOGIKA TYPING INDICATOR (KIRIM STATUS) ---
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setMessageInput(value);
+
+    // Simpan Draft ke LocalStorage (Real-time)
+    if (userId && otherUser) {
+      const draftKey = `draft_${getChatPairKey(userId, otherUser)}`;
+      localStorage.setItem(draftKey, value);
+    }
+
+    // Logika Typing Indicator
+    if (userId && otherUser) {
+      // 1. Set status 'typing' ke Firebase
+      const typingRef = ref(database, `typing/${getChatPairKey(userId, otherUser)}/${userId}`);
+      set(typingRef, true).catch(err => console.error("Set typing error:", err));
+
+      // 2. Reset Timer 10 Detik
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      
+      typingTimeoutRef.current = setTimeout(() => {
+        // Setelah 10 detik tidak ada input, set 'typing' jadi false
+        set(typingRef, false).catch(err => console.error("Reset typing error:", err));
+      }, 10000); // 10 detik
+    }
+  };
+
+  // --- LOGIKA MEMBACA STATUS LAWAN CHAT ---
+  useEffect(() => {
+    if (!userId || !otherUser) return;
+    
+    const chatPairKey = getChatPairKey(userId, otherUser);
+    const otherUserTypingRef = ref(database, `typing/${chatPairKey}/${otherUser}`);
+
+    const unsub = onValue(otherUserTypingRef, (snapshot) => {
+      const val = snapshot.val();
+      setIsOtherUserTyping(val === true);
+    });
+
+    return () => unsub();
+  }, [userId, otherUser]);
+
+  // --- LOAD DRAFT SAAT MASUK CHAT ---
+  useEffect(() => {
+    if (userId && otherUser) {
+      const draftKey = `draft_${getChatPairKey(userId, otherUser)}`;
+      const savedDraft = localStorage.getItem(draftKey);
+      if (savedDraft) {
+        setMessageInput(savedDraft);
+      } else {
+        setMessageInput("");
+      }
+    }
+  }, [userId, otherUser]);
 
 
 
@@ -876,7 +941,15 @@ useEffect(() => {
         throw new Error(data.message || "Gagal mengirim pesan");
       }
 
+      // setMessageInput("");
+        // Bersihkan Input & Draft setelah sukses kirim
       setMessageInput("");
+      const draftKey = `draft_${getChatPairKey(userId, otherUser)}`;
+      localStorage.removeItem(draftKey);
+
+      // Matikan status typing manual karena sudah terkirim
+      const typingRef = ref(database, `typing/${getChatPairKey(userId, otherUser)}/${userId}`);
+      set(typingRef, false);
     } catch (err) {
       console.error("Error sending message:", err);
       alert("Gagal mengirim pesan: " + err.message);
@@ -1237,7 +1310,15 @@ if (!otherUser) {
             </div>
             <div className="flex items-center gap-2 text-sm text-slate-400">
               <p className="text-sm text-slate-400">Chat dengan: {otherUser}</p>
-                    
+                       {/* Logika: Hanya tampilkan jika sedang mengetik */}
+                        {isOtherUserTyping && (
+                          <div className="ml-4 mt-1">
+                            <span className="text-xs text-indigo-400 italic animate-pulse flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping"></span>
+                              Sedang mengetik...
+                            </span>
+                          </div>
+                        )}
             </div>
                   
           </div>
@@ -1363,7 +1444,8 @@ Tambahan kondisi untuk OFFLINE  <span className="animate-ping absolute inline-fl
           <input
             type="text"
             value={messageInput}
-            onChange={(e) => setMessageInput(e.target.value)}
+            {/* onChange={(e) => setMessageInput(e.target.value)} */}
+            onChange={handleInputChange}
             placeholder="Tulis pesan..."
             disabled={sending}
             className="flex-1 rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-2 outline-none transition placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-60"
